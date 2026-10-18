@@ -1,0 +1,228 @@
+/* ==========================================================================
+   Global Travel Globe & AI Itinerary Planner — Custom Styles
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.7);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.75);
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Globe Container Starfield & Atmosphere */
+#globe-viewport {
+  background: radial-gradient(circle at 50% 50%, #0b192c 0%, #050b14 58%, #020409 100%);
+  position: relative;
+}
+
+#globe-viewport::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.65) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 28% 72%, rgba(125,211,252,0.55) 50%, transparent 100%),
+    radial-gradient(1px 1px at 64% 22%, rgba(255,255,255,0.5) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 82% 48%, rgba(16,185,129,0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 43% 85%, rgba(255,255,255,0.6) 50%, transparent 100%),
+    radial-gradient(1px 1px at 91% 14%, rgba(255,255,255,0.5) 50%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 18% 54%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  opacity: 0.75;
+  z-index: 1;
+}
+
+/* Floating 3D Globe HTML Pin Markers */
+.globe-pin-wrapper {
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  transform: translate(-50%, -100%);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), z-index 0.15s ease;
+}
+
+.globe-pin-wrapper:hover {
+  transform: translate(-50%, -106%) scale(1.08);
+  z-index: 999 !important;
+}
+
+.globe-pin-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 22px -4px rgba(0, 0, 0, 0.75), 0 0 14px rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.65);
+  background: rgba(6, 24, 38, 0.92);
+  color: #f8fafc;
+  min-width: 122px;
+  position: relative;
+}
+
+.globe-pin-card.pin-selected {
+  border-color: #38bdf8;
+  background: rgba(8, 35, 62, 0.96);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.75), 0 8px 20px rgba(0,0,0,0.8);
+}
+
+.globe-pin-card.pin-over-budget {
+  border-color: rgba(245, 158, 11, 0.65);
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.75), 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.globe-pin-stem {
+  width: 2px;
+  height: 10px;
+  margin: 0 auto;
+  background: linear-gradient(to bottom, #10b981, transparent);
+}
+
+.globe-pin-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  margin: -2px auto 0;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981, 0 0 20px #34d399;
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+.globe-pin-dot.dot-amber {
+  background: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b, 0 0 18px #fbbf24;
+}
+
+.globe-pin-origin {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(30, 58, 138, 0.92);
+  border: 1.5px solid #60a5fa;
+  color: #eff6ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.7);
+  white-space: nowrap;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 0.78;
+  }
+}
+
+/* Range Input Styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #38bdf8;
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+  margin-top: -6px;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #7dd3fc;
+}
+
+/* Leaflet 2D Map Custom Dark Overrides */
+.leaflet-container {
+  background: #060d18 !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Print Friendly Itinerary */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  header,
+  #left-filter-panel,
+  #globe-stage-column,
+  #right-matches-column,
+  .no-print {
+    display: none !important;
+  }
+  #destination-modal {
+    position: static !important;
+    display: block !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+  #destination-modal-card {
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+}

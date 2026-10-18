@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AeroGlobe AI | Interactive 3D Travel Globe, Cost Estimator & Itinerary Planner</title>
+  <meta name="description" content="Discover where to travel on an interactive 3D World Globe filtered by desired temperature, travel month, total flight + hotel budget, off-peak/on-peak season, trip duration, and 5-star, 4-star, 3-star, or Airbnb accommodation." />
+
+  <!-- Leaflet CSS (for 2D Map View Toggle) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            brand: {
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Three.js & Globe.gl for Interactive 3D WebGL Earth Globe -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/globe.gl@2.32.1/dist/globe.gl.min.js"></script>
+
+  <!-- Leaflet JS for 2D Flat Map Toggle -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex flex-col overflow-hidden font-sans antialiased">
+
+  <!-- ================= TOP NAVIGATION HEADER ================= -->
+  <header class="h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 lg:px-6 flex items-center justify-between flex-shrink-0 z-30 shadow-lg">
+    <!-- Brand -->
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 ring-1 ring-white/20">
+        <i data-lucide="globe-2" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-white">
+            AEROGLOBE <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">TRAVEL PLANNER</span>
+          </h1>
+          <span class="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            3D LIVE GLOBE
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden md:block">
+          Weather &amp; Budget 3D Globe Explorer • Flight + Hotel Estimator (5★, 4★, 3★, Airbnb) • Instant AI Itinerary &amp; Direct Booking
+        </p>
+      </div>
+    </div>
+
+    <!-- Center Live Summary Pills -->
+    <div class="hidden xl:flex items-center gap-2 bg-slate-950/90 border border-slate-800 px-3.5 py-1.5 rounded-xl text-xs">
+      <div class="flex items-center gap-1.5 text-amber-300 font-semibold">
+        <i data-lucide="thermometer-sun" class="w-3.5 h-3.5"></i>
+        <span id="header-summary-temp">18°C – 32°C</span>
+      </div>
+      <span class="text-slate-700">•</span>
+      <div class="flex items-center gap-1.5 text-cyan-300 font-semibold">
+        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+        <span id="header-summary-month">October (7 Days)</span>
+      </div>
+      <span class="text-slate-700">•</span>
+      <div class="flex items-center gap-1.5 text-emerald-300 font-semibold">
+        <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+        <span id="header-summary-budget">Budget: £2,200</span>
+      </div>
+      <span class="text-slate-700">•</span>
+      <div class="flex items-center gap-1.5 text-purple-300 font-semibold">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span id="header-summary-matches">24 Locations Lit Up</span>
+      </div>
+    </div>
+
+    <!-- Right Controls: Origin Hub, Currency, View Mode & Surprise Me -->
+    <div class="flex items-center gap-2">
+      <!-- Origin Airport Hub -->
+      <div class="flex items-center bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs">
+        <i data-lucide="plane-takeoff" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 flex-shrink-0"></i>
+        <span class="text-slate-400 mr-1 hidden sm:inline">Fly From:</span>
+        <select id="origin-hub-select" onchange="handleFilterChange()" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer text-xs">
+          <!-- Populated by app.js -->
+        </select>
+      </div>
+
+      <!-- Currency Selector -->
+      <select id="currency-select" onchange="handleCurrencyChange(this.value)" title="Select Currency" class="bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-emerald-300 focus:outline-none cursor-pointer">
+        <option value="GBP">£ GBP</option>
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="INR">₹ INR</option>
+      </select>
+
+      <!-- 3D Globe vs 2D Map Switcher -->
+      <div class="flex items-center bg-slate-800/90 p-0.5 rounded-lg border border-slate-700">
+        <button id="btn-view-3d" onclick="setMapMode('3d')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-cyan-600 text-white shadow flex items-center gap-1 transition">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span>3D Globe</span>
+        </button>
+        <button id="btn-view-2d" onclick="setMapMode('2d')" class="px-2.5 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1 transition">
+          <i data-lucide="map" class="w-3.5 h-3.5"></i>
+          <span>2D Map</span>
+        </button>
+      </div>
+
+      <!-- Surprise Me Button -->
+      <button onclick="pickRandomMatchingDestination()" title="Fly to a Random Matching Destination" class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Surprise Me</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN 3-COLUMN WORKSPACE ================= -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- ================= LEFT COLUMN: USER TRAVEL PREFERENCES DECK ================= -->
+    <aside id="left-filter-panel" class="w-80 lg:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col h-full z-20 flex-shrink-0 overflow-y-auto">
+      
+      <!-- Panel Header -->
+      <div class="p-4 border-b border-slate-800/90 bg-slate-900/80 sticky top-0 z-10 backdrop-blur-md flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-cyan-400"></i>
+          <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Your Travel Criteria</h2>
+        </div>
+        <button onclick="resetAllFilters()" class="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+          <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+          <span>Reset All</span>
+        </button>
+      </div>
+
+      <div class="p-4 space-y-5 flex-1">
+
+        <!-- 1. DESIRED WEATHER (TEMPERATURE) -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="thermometer-sun" class="w-4 h-4 text-amber-400"></i>
+              <span>1. Desired Weather (Temp)</span>
+            </label>
+            <div class="flex items-center gap-1 bg-slate-900 border border-slate-700 rounded-md p-0.5 text-[10px] font-mono">
+              <button id="unit-c-btn" onclick="setTempUnit('C')" class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-bold">°C</button>
+              <button id="unit-f-btn" onclick="setTempUnit('F')" class="px-1.5 py-0.5 rounded text-slate-400 hover:text-white">°F</button>
+            </div>
+          </div>
+
+          <!-- Min / Max Temperature Display & Number Inputs -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2">
+              <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                <span>Min Temp</span>
+                <span id="min-temp-badge" class="font-mono text-amber-300 font-bold">16°C</span>
+              </div>
+              <input type="range" id="min-temp-slider" min="-15" max="38" value="16" oninput="syncTempSliders('min')" class="w-full" />
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2">
+              <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                <span>Max Temp</span>
+                <span id="max-temp-badge" class="font-mono text-amber-300 font-bold">34°C</span>
+              </div>
+              <input type="range" id="max-temp-slider" min="-10" max="42" value="34" oninput="syncTempSliders('max')" class="w-full" />
+            </div>
+          </div>
+
+          <!-- Quick Weather Presets -->
+          <div class="flex flex-wrap gap-1.5 pt-0.5">
+            <button onclick="applyTempPreset(-15, 42)" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">🌍 Any</button>
+            <button onclick="applyTempPreset(26, 36)" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition">🏝️ Tropical (26–36°C)</button>
+            <button onclick="applyTempPreset(20, 28)" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-orange-500/15 hover:bg-orange-500/25 text-orange-300 border border-orange-500/30 transition">☀️ Warm (20–28°C)</button>
+            <button onclick="applyTempPreset(12, 21)" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition">🌤️ Mild (12–21°C)</button>
+            <button onclick="applyTempPreset(-12, 10)" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 transition">❄️ Alpine (-12–10°C)</button>
+          </div>
+        </section>
+
+        <!-- 2. TRAVEL MONTH SELECTOR -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="calendar-days" class="w-4 h-4 text-cyan-400"></i>
+              <span>2. Month of Travel</span>
+            </label>
+            <span id="selected-month-label" class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded border border-cyan-500/30">October</span>
+          </div>
+
+          <div id="month-grid" class="grid grid-cols-4 gap-1.5">
+            <!-- Populated by app.js (Jan - Dec) -->
+          </div>
+        </section>
+
+        <!-- 3. NUMBER OF DAYS FOR TRAVEL -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
+              <span>3. Number of Travel Days</span>
+            </label>
+            <div class="flex items-center gap-1.5">
+              <button onclick="adjustTripDays(-1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
+              <span id="trip-days-badge" class="text-xs font-mono font-extrabold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2.5 py-0.5 rounded">7 Days</span>
+              <button onclick="adjustTripDays(1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
+            </div>
+          </div>
+
+          <input type="range" id="trip-days-slider" min="2" max="28" value="7" oninput="setTripDays(this.value)" class="w-full" />
+
+          <div class="flex items-center justify-between gap-1 pt-0.5">
+            <button onclick="setTripDays(3)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">3d Weekend</button>
+            <button onclick="setTripDays(5)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">5d Break</button>
+            <button onclick="setTripDays(7)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">7d Week</button>
+            <button onclick="setTripDays(10)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">10d</button>
+            <button onclick="setTripDays(14)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">14d</button>
+          </div>
+        </section>
+
+        <!-- 4. EXPECTED BUDGET (FLIGHT + HOTEL) -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
+              <span>4. Total Budget (Flight + Hotel)</span>
+            </label>
+            <span id="budget-display-badge" class="text-xs font-mono font-extrabold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">£2,200</span>
+          </div>
+
+          <input type="range" id="budget-slider" min="300" max="8000" step="50" value="2200" oninput="setBudgetGBP(this.value)" class="w-full" />
+
+          <!-- Direct numeric budget box & Quick Budget Tiers -->
+          <div class="flex items-center justify-between gap-1.5 pt-0.5">
+            <button onclick="setBudgetGBP(800)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-1">£800</button>
+            <button onclick="setBudgetGBP(1500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-2">£1,500</button>
+            <button onclick="setBudgetGBP(2500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-3">£2,500</button>
+            <button onclick="setBudgetGBP(5000)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-4">£5,000+</button>
+          </div>
+
+          <label class="flex items-center justify-between text-[11px] text-slate-400 pt-1 cursor-pointer">
+            <span>Strictly hide locations over budget</span>
+            <input type="checkbox" id="strict-budget-toggle" checked onchange="handleFilterChange()" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+          </label>
+        </section>
+
+        <!-- 5. SEASONALITY: OFF-PEAK / ON-PEAK LOCATIONS -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="compass" class="w-4 h-4 text-rose-400"></i>
+              <span>5. Crowd &amp; Seasonality</span>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5">
+            <button id="season-btn-both" onclick="setSeasonFilter('both')" class="py-2 px-2 rounded-lg text-[11px] font-bold bg-cyan-600 text-white border border-cyan-400 shadow flex flex-col items-center gap-0.5 transition">
+              <span>Both</span>
+              <span class="text-[9px] font-normal opacity-85">All Locations</span>
+            </button>
+            <button id="season-btn-offpeak" onclick="setSeasonFilter('off-peak')" class="py-2 px-2 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 hover:text-white border border-slate-800 flex flex-col items-center gap-0.5 transition">
+              <span>Off-Peak</span>
+              <span class="text-[9px] text-emerald-400 font-normal">Best Value</span>
+            </button>
+            <button id="season-btn-onpeak" onclick="setSeasonFilter('on-peak')" class="py-2 px-2 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 hover:text-white border border-slate-800 flex flex-col items-center gap-0.5 transition">
+              <span>On-Peak</span>
+              <span class="text-[9px] text-amber-400 font-normal">Prime Season</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 6. HOTEL ACCOMMODATION PREFERENCE (5★, 4★, 3★, Airbnb - Choose Any or All) -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="hotel" class="w-4 h-4 text-amber-400"></i>
+              <span>6. Accommodation Preference</span>
+            </label>
+            <button onclick="selectAllAccommodationTiers()" class="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline">
+              Select All (4)
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-tight">
+            Choose any combination or all options (5★, 4★, 3★, Airbnb). We calculate total flight + stay cost for your selected options:
+          </p>
+
+          <div id="accommodation-checkbox-grid" class="grid grid-cols-2 gap-2 pt-1">
+            <!-- Populated by app.js -->
+          </div>
+        </section>
+
+      </div>
+    </aside>
+
+    <!-- ================= CENTER COLUMN: 3D INTERACTIVE WORLD GLOBE & MAP ================= -->
+    <main id="globe-stage-column" class="flex-1 flex flex-col h-full relative overflow-hidden">
+
+      <!-- Top Floating Region Corridors & Globe Controls Bar -->
+      <div class="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <!-- Quick Continent Camera Jumps -->
+        <div class="flex items-center gap-1 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-1 rounded-xl shadow-xl pointer-events-auto overflow-x-auto scrollbar-none">
+          <button onclick="focusGlobeRegion('world')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-white transition">🌍 Global</button>
+          <button onclick="focusGlobeRegion('Europe')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">🇪🇺 Europe</button>
+          <button onclick="focusGlobeRegion('Asia')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">🌏 Asia</button>
+          <button onclick="focusGlobeRegion('Americas')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">🌎 Americas</button>
+          <button onclick="focusGlobeRegion('Middle East & Africa')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">🌍 ME &amp; Africa</button>
+          <button onclick="focusGlobeRegion('Oceania')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">🌏 Oceania</button>
+        </div>
+
+        <!-- Globe Skin & Rotation Controls -->
+        <div class="flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-1 rounded-xl shadow-xl pointer-events-auto">
+          <button id="btn-autorotate" onclick="toggleGlobeRotation()" title="Toggle 3D Globe Spin" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 transition">
+            <i data-lucide="RefreshCw" class="w-3 h-3"></i>
+            <span>Spin: ON</span>
+          </button>
+          <button onclick="cycleGlobeTexture()" title="Switch Earth Texture (Night Lights / Blue Marble / Dark Vector)" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1 transition">
+            <i data-lucide="Sparkles" class="w-3 h-3 text-cyan-400"></i>
+            <span id="globe-texture-label">Night Earth</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3D WebGL Globe Container -->
+      <div id="globe-viewport" class="w-full h-full flex-1 relative flex items-center justify-center overflow-hidden">
+        <div id="globe-viz" class="w-full h-full"></div>
+        <!-- 2D Leaflet Map Container (Hidden by default, toggled via 2D Map button) -->
+        <div id="leaflet-map" class="w-full h-full hidden absolute inset-0 z-10"></div>
+      </div>
+
+      <!-- Bottom Floating Legend & Helper Bar -->
+      <div class="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div class="bg-slate-900/90 backdrop-blur-md border border-slate-800 px-3.5 py-2 rounded-xl shadow-xl flex flex-wrap items-center gap-4 text-[11px] pointer-events-auto">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#10b981]"></span>
+            <span class="text-slate-200 font-semibold">Matches Weather &amp; Budget</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_#f59e0b]"></span>
+            <span class="text-slate-300">Matches Weather (Above Budget)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_10px_#60a5fa]"></span>
+            <span class="text-slate-300">Departure Airport Hub</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 backdrop-blur-md border border-slate-800 px-3.5 py-2 rounded-xl shadow-xl text-[11px] text-cyan-300 font-medium pointer-events-auto flex items-center gap-1.5">
+          <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i>
+          <span>Click any glowing location on the globe to inspect Flight + Hotel costs, generate an AI Itinerary &amp; book!</span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ================= RIGHT COLUMN: LIT-UP LOCATIONS & COST BREAKDOWN LIST ================= -->
+    <aside id="right-matches-column" class="w-80 lg:w-96 bg-slate-900/95 border-l border-slate-800 flex flex-col h-full z-20 flex-shrink-0">
+      
+      <!-- Matches Header & Sort -->
+      <div class="p-3.5 border-b border-slate-800 space-y-2.5 bg-slate-900/90">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-white flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="matches-count-heading">Matching Destinations</span>
+            </h2>
+            <p id="matches-subtitle" class="text-[11px] text-slate-400">
+              Showing Flight + Hotel costs for your selection
+            </p>
+          </div>
+          <select id="sort-select" onchange="renderMatchingDestinationsList()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200 font-semibold focus:outline-none cursor-pointer">
+            <option value="total_asc">Price: Low to High</option>
+            <option value="temp_desc">Warmest First</option>
+            <option value="temp_asc">Coolest First</option>
+            <option value="flight_asc">Cheapest Flight</option>
+          </select>
+        </div>
+
+        <!-- Quick Search Filter inside Matching Destinations -->
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input
+            type="text"
+            id="dest-search-input"
+            oninput="renderMatchingDestinationsList()"
+            placeholder="Filter city, country or vibe (e.g. beach, food)..."
+            class="w-full bg-slate-950/90 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+          />
+        </div>
+      </div>
+
+      <!-- Scrollable Destination Cards Container -->
+      <div id="matching-destinations-list" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <!-- Dynamically rendered by app.js -->
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ================= DESTINATION DETAIL, ITINERARY PROMPT & BOOKING MODAL ================= -->
+  <div id="destination-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-6">
+    <div id="destination-modal-card" class="bg-slate-900 border border-slate-700/90 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Top Header -->
+      <div id="modal-header-banner" class="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-800 flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3.5">
+          <div id="modal-flag" class="text-4xl leading-none select-none">🇵🇹</div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 id="modal-city-title" class="text-xl sm:text-2xl font-extrabold text-white">Lisbon, Portugal</h2>
+              <span id="modal-season-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide">Off-Peak</span>
+              <span id="modal-temp-badge" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">23°C Avg High</span>
+            </div>
+            <p id="modal-tagline" class="text-xs sm:text-sm text-slate-300 mt-1"></p>
+            <div id="modal-vibe-tags" class="flex flex-wrap gap-1.5 mt-2"></div>
+          </div>
+        </div>
+        <button onclick="closeDestinationModal()" class="no-print p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Scrollable Content -->
+      <div class="p-5 overflow-y-auto space-y-6 flex-1">
+
+        <!-- SECTION A: EXPECTED FLYING COST + HOTEL COST BREAKDOWN Across Chosen Accommodation Tiers -->
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h3 class="text-sm font-extrabold uppercase tracking-wider text-cyan-300 flex items-center gap-2">
+              <i data-lucide="calculator" class="w-4 h-4"></i>
+              <span id="modal-cost-heading">Expected Flight + Hotel Cost Breakdown (7 Days)</span>
+            </h3>
+            <span id="modal-route-meta" class="text-xs font-mono text-slate-400">LON ✈ LIS • Return Flight Included</span>
+          </div>
+
+          <div id="modal-accommodation-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- Populated by app.js for 5-Star, 4-Star, 3-Star, Airbnb -->
+          </div>
+        </div>
+
+        <!-- SECTION B: INTERACTIVE ITINERARY PROMPT ("Do you want the tool to create an itinerary for you as well?") -->
+        <div class="bg-gradient-to-br from-indigo-950/70 via-slate-900 to-cyan-950/60 border border-cyan-500/40 rounded-2xl p-4 sm:p-5 shadow-lg">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase font-bold text-cyan-300 bg-cyan-500/15 px-2.5 py-0.5 rounded-full border border-cyan-500/30">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>AI Trip Architect</span>
+              </div>
+              <h3 id="itinerary-prompt-question" class="text-base sm:text-lg font-extrabold text-white">
+                Would you like us to create a tailored 7-Day Itinerary for Lisbon?
+              </h3>
+              <p class="text-xs text-slate-300">
+                Generates a complete day-by-day plan (Morning, Afternoon &amp; Evening) customized for <span id="itinerary-prompt-month" class="text-amber-300 font-semibold">October</span> weather, local culinary specialties, and your accommodation tier.
+              </p>
+            </div>
+
+            <!-- Itinerary Style Selector & Action Button -->
+            <div class="no-print flex flex-wrap sm:flex-nowrap items-center gap-2 flex-shrink-0">
+              <select id="itinerary-style-select" onchange="if(state.itineraryVisible) generateDestinationItinerary()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-cyan-400">
+                <option value="all-rounder">✨ Balanced Highlights</option>
+                <option value="culture">🏛️ Culture &amp; History</option>
+                <option value="food">🍽️ Gastronomy &amp; Local Markets</option>
+                <option value="relaxation">🌴 Relaxation, Spa &amp; Coastal</option>
+                <option value="adventure">🥾 Adventure &amp; Hidden Gems</option>
+              </select>
+
+              <button id="btn-generate-itinerary" onclick="generateDestinationItinerary()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-cyan-500/25 flex items-center gap-2 transition whitespace-nowrap">
+                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                <span>Yes, Create My Itinerary!</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Generated Day-by-Day Itinerary Container (Revealed when user clicks "Yes, Create My Itinerary!") -->
+          <div id="generated-itinerary-container" class="hidden mt-5 pt-5 border-t border-slate-800/90 space-y-4">
+            <!-- Populated dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- SECTION C: DIRECT FLIGHT & HOTEL BOOKING LINKS -->
+        <div class="no-print bg-slate-950/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                <span>Book Your Flights &amp; Accommodation Directly</span>
+              </h3>
+              <p id="booking-links-subtitle" class="text-xs text-slate-400 mt-0.5">
+                Pre-configured links for your route, travel month, duration, and selected hotel star ratings
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Flight Booking Portals -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                  <i data-lucide="plane" class="w-4 h-4"></i>
+                  <span>Book Return Flights</span>
+                </span>
+                <span id="booking-flight-price-pill" class="text-xs font-mono font-bold text-white bg-cyan-500/20 border border-cyan-500/30 px-2 py-0.5 rounded">Est. £115</span>
+              </div>
+              <div id="modal-flight-links" class="grid grid-cols-2 gap-2">
+                <!-- Populated by app.js -->
+              </div>
+            </div>
+
+            <!-- Hotel & Airbnb Booking Portals -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <i data-lucide="building" class="w-4 h-4"></i>
+                  <span>Book Hotels (5★, 4★, 3★) &amp; Airbnb</span>
+                </span>
+                <span id="booking-hotel-price-pill" class="text-xs font-mono font-bold text-white bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded">From £528</span>
+              </div>
+              <div id="modal-hotel-links" class="grid grid-cols-2 gap-2">
+                <!-- Populated by app.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Destinations Database & Application Logic -->
+  <script src="destinations-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
