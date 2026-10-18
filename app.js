@@ -311,6 +311,9 @@ function evaluateDestination(dest) {
       label: tier.label,
       shortLabel: tier.shortLabel,
       stars: tier.stars,
+      baseNightlyGBP: baseNightly,
+      hotelSeasonMultiplier,
+      occupancyMultiplier,
       nightlyGBP,
       hotelTotalGBP,
       flightCostGBP,
@@ -362,6 +365,9 @@ function evaluateDestination(dest) {
     sunHours,
     isOnPeak,
     seasonType,
+    rawFlightGBP,
+    flightSeasonMultiplier,
+    hotelSeasonMultiplier,
     singleAdultFlightGBP,
     singleChildFlightGBP,
     flightCostGBP,
@@ -1337,13 +1343,26 @@ function renderDestinationModalContent(dest) {
         }"
       >
         <div>
-          <div class="flex items-center justify-between gap-1 mb-1">
+          <div class="flex items-center justify-between gap-1 mb-1.5">
             <span class="text-xs font-extrabold text-white">${tierMeta.label}</span>
-            ${isUserChecked ? `<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Selected</span>` : ''}
+            ${isActive
+              ? `<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950 font-extrabold">Viewing Basis</span>`
+              : isUserChecked
+                ? `<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Selected</span>`
+                : ''
+            }
           </div>
-          <p class="text-[10px] text-slate-400 line-clamp-2 mb-2.5" title="${t.exampleProperty}">
-            e.g. ${t.exampleProperty}
-          </p>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 mb-2.5">
+            <div class="text-[9px] uppercase font-mono tracking-wider text-amber-300/90 font-bold mb-0.5">
+              🏨 Identified Reference Stay:
+            </div>
+            <p class="text-[11px] font-semibold text-white leading-snug line-clamp-2" title="${t.exampleProperty}">
+              ${t.exampleProperty}
+            </p>
+            <div class="text-[10px] font-mono text-emerald-300 mt-1">
+              ${formatMoney(t.nightlyGBP)}/night × ${state.tripDays} nights
+            </div>
+          </div>
         </div>
 
         <div class="space-y-1 pt-2 border-t border-slate-800 text-xs font-mono">
@@ -1369,6 +1388,162 @@ function renderDestinationModalContent(dest) {
       </div>
     `;
   }).join('');
+
+  // Render Identified Reference Hotel & Flight Price Basis Panel for Active Tier
+  const basisPanel = document.getElementById('modal-price-basis-panel');
+  if (basisPanel) {
+    const activeTier = dest.tierBreakdowns[state.activeModalTier] || dest.primaryTier;
+    const dates = getSampleTravelDates();
+    const currCode = state.currency || 'GBP';
+    const primaryHotelName = (activeTier.exampleProperty || dest.city).split('/')[0].trim();
+    const hotelQueryEncoded = encodeURIComponent(`${primaryHotelName} ${dest.city} ${dest.country}`);
+    const specificHotelBookingUrl = activeTier.tierId === 'airbnb'
+      ? `https://www.airbnb.co.uk/s/${encodeURIComponent(dest.city)}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`
+      : `https://www.booking.com/searchresults.html?ss=${hotelQueryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${activeTier.roomsNeeded}&selected_currency=${currCode}`;
+    const googleHotelsUrl = `https://www.google.com/travel/search?q=${hotelQueryEncoded}&curr=${currCode}`;
+    const skyscannerFlightUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}&currency=${currCode}`;
+
+    const hotelSeasonText = dest.isOnPeak
+      ? `On-Peak Month (+15% peak demand adjustment in ${monthMeta.full})`
+      : `Off-Peak Value Month (-15% off-peak discount in ${monthMeta.full})`;
+    const flightSeasonText = dest.isOnPeak
+      ? `On-Peak Month (+14% seasonal airfare adjustment in ${monthMeta.full})`
+      : `Off-Peak Value Month (-12% off-peak airfare saver in ${monthMeta.full})`;
+    const roomBasisText = activeTier.tierId === 'airbnb'
+      ? `Entire Home / Apartment for ${getTravellersLabel(false)}`
+      : `${activeTier.roomsNeeded} Room${activeTier.roomsNeeded > 1 ? 's' : ''} for ${getTravellersLabel(false)}`;
+
+    basisPanel.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-mono uppercase font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+            Price Transparency Basis
+          </span>
+          <h4 class="text-xs sm:text-sm font-extrabold text-white">
+            How Your ${formatMoney(activeTier.combinedTotalGBP)} Total (${activeTier.label}) Was Identified
+          </h4>
+        </div>
+        <span class="text-[11px] font-mono text-emerald-300 font-bold">
+          All amounts in ${currCode} • ${state.tripDays} Nights (${dates.checkinISO} → ${dates.checkoutISO})
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <!-- 1. Hotel Basis Card -->
+        <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3.5 flex flex-col justify-between space-y-2.5">
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+                <i data-lucide="hotel" class="w-4 h-4"></i>
+                <span>1. Identified Accommodation Basis (${activeTier.shortLabel})</span>
+              </span>
+              <span class="font-mono text-xs font-extrabold text-amber-300">${formatMoney(activeTier.hotelTotalGBP)}</span>
+            </div>
+
+            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 space-y-1">
+              <div class="text-[10px] text-slate-400 uppercase font-mono">Benchmark Reference Hotel / Property:</div>
+              <div class="text-xs font-extrabold text-white">${activeTier.exampleProperty}</div>
+            </div>
+
+            <div class="space-y-1 text-[11px] font-mono text-slate-300 pt-1">
+              <div class="flex justify-between">
+                <span class="text-slate-400">• Standard Base Rate (1 Room/Night):</span>
+                <span class="text-white font-semibold">${formatMoney(activeTier.baseNightlyGBP)}/night</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">• Seasonality (${monthMeta.short}):</span>
+                <span class="${dest.isOnPeak ? 'text-amber-300' : 'text-emerald-300'}">${hotelSeasonText}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">• Party &amp; Room Allocation:</span>
+                <span class="text-white">${roomBasisText}</span>
+              </div>
+              <div class="flex justify-between pt-1 border-t border-slate-800 text-amber-300 font-bold">
+                <span>• Identified Nightly Stay Cost × ${state.tripDays} Nights:</span>
+                <span>${formatMoney(activeTier.nightlyGBP)} × ${state.tripDays}n = ${formatMoney(activeTier.hotelTotalGBP)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <a
+              href="${specificHotelBookingUrl}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
+            >
+              <span>View "${primaryHotelName}" Rates</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+            <a
+              href="${googleHotelsUrl}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
+            >
+              <span>Google Hotels</span>
+              <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. Flight Basis Card -->
+        <div class="bg-slate-900/90 border border-cyan-500/30 rounded-xl p-3.5 flex flex-col justify-between space-y-2.5">
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-cyan-300 flex items-center gap-1.5">
+                <i data-lucide="plane" class="w-4 h-4"></i>
+                <span>2. Identified Return Flight Basis (${origin.iata} ✈ ${dest.iata})</span>
+              </span>
+              <span class="font-mono text-xs font-extrabold text-cyan-300">${formatMoney(dest.flightCostGBP)}</span>
+            </div>
+
+            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 space-y-1">
+              <div class="text-[10px] text-slate-400 uppercase font-mono">Corridor &amp; Distance Basis:</div>
+              <div class="text-xs font-extrabold text-white">
+                ${origin.flag} ${origin.city} (${origin.iata}) ⇄ ${dest.flag} ${dest.city} (${dest.iata}) • ${dest.distanceKm.toLocaleString()} km (~${dest.estFlightHours}h)
+              </div>
+            </div>
+
+            <div class="space-y-1 text-[11px] font-mono text-slate-300 pt-1">
+              <div class="flex justify-between">
+                <span class="text-slate-400">• Route Baseline Return Fare (1 Adult):</span>
+                <span class="text-white font-semibold">${formatMoney(dest.rawFlightGBP)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">• Seasonality (${monthMeta.short}):</span>
+                <span class="${dest.isOnPeak ? 'text-amber-300' : 'text-emerald-300'}">${flightSeasonText}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">• Adult Return Fare (${state.adults} Adult${state.adults > 1 ? 's' : ''}):</span>
+                <span class="text-white">${state.adults} × ${formatMoney(dest.singleAdultFlightGBP)} = ${formatMoney(state.adults * dest.singleAdultFlightGBP)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">• Child Return Fare (25% off, ${state.children} Child${state.children !== 1 ? 'ren' : ''}):</span>
+                <span class="text-pink-300">${state.children > 0 ? `${state.children} × ${formatMoney(dest.singleChildFlightGBP)} = ${formatMoney(state.children * dest.singleChildFlightGBP)}` : `${formatMoney(dest.singleChildFlightGBP)}/child (0 selected)`}</span>
+              </div>
+              <div class="flex justify-between pt-1 border-t border-slate-800 text-cyan-300 font-bold">
+                <span>• Total Return Flights (${getTravellersLabel(true)}):</span>
+                <span>${formatMoney(dest.flightCostGBP)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <a
+              href="${skyscannerFlightUrl}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex-1 py-1.5 px-2.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
+            >
+              <span>Verify ${origin.iata} ⇄ ${dest.iata} Fares on Skyscanner</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   // Update Itinerary Prompt Question
   document.getElementById('itinerary-prompt-question').textContent =
