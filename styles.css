@@ -168,6 +168,88 @@ body.modal-open .leaflet-popup-pane {
   white-space: nowrap;
 }
 
+/* Ultra-Compact 2D Map Pill Markers (Name + Price Only, Small Font) */
+.map2d-pin-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.14s ease;
+}
+
+.map2d-pin-wrapper:hover {
+  transform: translate(-50%, -105%) scale(1.12);
+  z-index: 99999 !important;
+}
+
+.map2d-pin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1.5px 5px;
+  border-radius: 5px;
+  background: rgba(6, 20, 34, 0.88);
+  border: 1px solid rgba(16, 185, 129, 0.75);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
+  font-size: 9px;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: #f8fafc;
+}
+
+.map2d-pin-pill.pin-over-budget {
+  border-color: rgba(245, 158, 11, 0.75);
+}
+
+.map2d-pin-name {
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+}
+
+.map2d-pin-price {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800;
+  color: #34d399;
+}
+
+.map2d-pin-pill.pin-over-budget .map2d-pin-price {
+  color: #fbbf24;
+}
+
+.map2d-pin-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  margin-top: 1px;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.map2d-pin-dot.dot-amber {
+  background: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+}
+
+.map2d-origin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(30, 58, 138, 0.92);
+  border: 1px solid #60a5fa;
+  color: #eff6ff;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.65);
+  transform: translate(-50%, -50%);
+}
+
 @keyframes pulseGlow {
   0%, 100% {
     transform: scale(1);

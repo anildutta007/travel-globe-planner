@@ -1050,49 +1050,48 @@ function update2DMapVisualization() {
   const origin = getOriginHub();
   const litDestinations = computedDestinations.filter(d => d.isLitUp);
 
-  // Origin marker
+  // Compact Origin marker
   const originIcon = L.divIcon({
     className: '',
-    html: `<div class="globe-pin-origin">🛫 ${origin.flag} ${origin.city}</div>`,
-    iconSize: [110, 26],
-    iconAnchor: [55, 13]
+    html: `<div class="map2d-origin-pill" title="Starting Point: ${origin.name}">🛫 ${origin.city}</div>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0]
   });
-  L.marker([origin.lat, origin.lng], { icon: originIcon }).addTo(leafletMarkersLayer);
+  L.marker([origin.lat, origin.lng], { icon: originIcon, zIndexOffset: 500 }).addTo(leafletMarkersLayer);
 
   litDestinations.forEach(d => {
     const tier = d.primaryTier;
     const lineColor = d.matchesBudget ? '#10b981' : '#f59e0b';
+    const shortCity = d.city.split('(')[0].split(',')[0].split('&')[0].trim();
+    const tooltipText = `${d.city}, ${d.country} (${formatTemp(d.tempC)}) • Flights: ${formatMoney(d.flightCostGBP)} + ${tier.shortLabel}: ${formatMoney(tier.hotelTotalGBP)} = ${formatMoney(tier.combinedTotalGBP)} (Click for Itinerary)`;
 
-    // Flight polyline
+    // Subtle flight polyline
     L.polyline([[origin.lat, origin.lng], [d.lat, d.lng]], {
       color: lineColor,
-      weight: 1.5,
-      opacity: 0.45,
-      dashArray: '4, 6'
+      weight: 1,
+      opacity: 0.28,
+      dashArray: '3, 6'
     }).addTo(leafletMarkersLayer);
 
-    // Destination badge marker
+    // Compact 2D Map badge: Location Name + Price Only (small font)
     const pinIcon = L.divIcon({
       className: '',
       html: `
-        <div class="globe-pin-card ${!d.matchesBudget ? 'pin-over-budget' : ''}" style="transform:translate(-50%,-100%);cursor:pointer;">
-          <div class="flex items-center justify-between gap-2 text-[11px] font-extrabold">
-            <span>${d.flag} ${d.city}</span>
-            <span class="font-mono text-amber-300">${formatTemp(d.tempC)}</span>
+        <div class="map2d-pin-wrapper" title="${tooltipText}">
+          <div class="map2d-pin-pill ${!d.matchesBudget ? 'pin-over-budget' : ''}">
+            <span class="map2d-pin-name">${shortCity}</span>
+            <span class="map2d-pin-price">${formatMoney(tier.combinedTotalGBP)}</span>
           </div>
-          <div class="text-[10px] font-mono text-slate-300">
-            ✈️ ${formatMoney(d.flightCostGBP)} + 🏨 ${formatMoney(tier.hotelTotalGBP)}
-          </div>
-          <div class="text-[10px] font-mono font-extrabold text-emerald-400">
-            Total: ${formatMoney(tier.combinedTotalGBP)} (${tier.shortLabel})
-          </div>
+          <div class="map2d-pin-dot ${!d.matchesBudget ? 'dot-amber' : ''}"></div>
         </div>
       `,
-      iconSize: [130, 54],
+      iconSize: [0, 0],
       iconAnchor: [0, 0]
     });
 
     const marker = L.marker([d.lat, d.lng], { icon: pinIcon }).addTo(leafletMarkersLayer);
+    marker.on('mouseover', () => marker.setZIndexOffset(10000));
+    marker.on('mouseout', () => marker.setZIndexOffset(0));
     marker.on('click', () => openDestinationModal(d.id));
   });
 }
