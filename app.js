@@ -657,6 +657,8 @@ function handleFilterChange() {
 // ============================================================================
 // 3D INTERACTIVE WEBGL GLOBE (GLOBE.GL / THREE.JS)
 // ============================================================================
+let globeRenderEpoch = 0;
+
 function init3DGlobe() {
   const container = document.getElementById('globe-viz');
   if (!container || typeof Globe === 'undefined') return;
@@ -682,6 +684,7 @@ function init3DGlobe() {
       .pointColor(d => d.isOrigin ? '#60a5fa' : (d.matchesBudget ? '#10b981' : '#f59e0b'))
       .pointAltitude(d => d.isOrigin ? 0.05 : 0.035)
       .pointRadius(d => d.isOrigin ? 0.65 : 0.55)
+      .pointsTransitionDuration(0)
       // Pulsing concentric radar rings around lit-up destinations
       .ringsData([])
       .ringLat('lat')
@@ -702,11 +705,13 @@ function init3DGlobe() {
       .arcDashInitialGap(() => Math.random())
       .arcDashAnimateTime(2200)
       .arcStroke(0.55)
+      .arcsTransitionDuration(0)
       // Interactive Floating HTML Badges Showing Flag, City, Temp, Flight Cost + Hotel Cost
       .htmlElementsData([])
       .htmlLat('lat')
       .htmlLng('lng')
       .htmlAltitude(0.04)
+      .htmlTransitionDuration(0)
       .htmlElement(d => createGlobePinElement(d));
 
     // Set initial camera & smooth auto-rotation
@@ -734,6 +739,8 @@ function init3DGlobe() {
 function createGlobePinElement(d) {
   const wrapper = document.createElement('div');
   wrapper.className = 'globe-pin-wrapper';
+  wrapper.dataset.pinId = String(d.id);
+  wrapper.dataset.renderEpoch = String(globeRenderEpoch);
 
   if (d.isOrigin) {
     wrapper.innerHTML = `
@@ -783,8 +790,66 @@ function createGlobePinElement(d) {
   return wrapper;
 }
 
+/**
+ * Purges any non-qualifying Three.js CSS2DObjects, 30s-delayed radar rings, points, and arcs
+ * directly from the Three.js scene graph & DOM so CSS2DRenderer never re-appends stale pins.
+ */
+function purgeNonQualifyingGlobeObjects(validPinIds, validDestIds, targetEpoch) {
+  if (!globeInstance) return;
+
+  try {
+    const scene = typeof globeInstance.scene === 'function' ? globeInstance.scene() : null;
+    if (scene && typeof scene.traverse === 'function') {
+      const toRemove = [];
+      scene.traverse(obj => {
+        if (obj.isCSS2DObject && obj.element) {
+          const pinId = obj.element.dataset ? obj.element.dataset.pinId : null;
+          const pinEpoch = obj.element.dataset ? obj.element.dataset.renderEpoch : null;
+          if (!pinId || !validPinIds.has(pinId) || (targetEpoch && pinEpoch && pinEpoch !== String(targetEpoch))) {
+            toRemove.push(obj);
+          }
+        } else if (obj.__globeObjType === 'ring' || obj.__globeObjType === 'arc') {
+          const dataId = obj.__data && obj.__data.id ? String(obj.__data.id) : null;
+          if (dataId && !validDestIds.has(dataId)) {
+            toRemove.push(obj);
+          }
+        } else if (obj.__globeObjType === 'point') {
+          const dataId = obj.__data && obj.__data.id ? String(obj.__data.id) : null;
+          if (dataId && !validPinIds.has(dataId)) {
+            toRemove.push(obj);
+          }
+        }
+      });
+
+      toRemove.forEach(obj => {
+        if (obj.element && obj.element.parentNode) {
+          obj.element.parentNode.removeChild(obj.element);
+        }
+        if (obj.parent) {
+          obj.parent.remove(obj);
+        }
+      });
+    }
+  } catch (e) {
+    // Ignore scene traversal edge cases
+  }
+
+  // Also clean any orphaned DOM pin wrappers not in validPinIds
+  const domPins = document.querySelectorAll('#globe-viz .globe-pin-wrapper');
+  domPins.forEach(el => {
+    const pinId = el.dataset ? el.dataset.pinId : null;
+    const pinEpoch = el.dataset ? el.dataset.renderEpoch : null;
+    if (!pinId || !validPinIds.has(pinId) || (targetEpoch && pinEpoch && pinEpoch !== String(targetEpoch))) {
+      el.remove();
+    }
+  });
+}
+
 function updateGlobeVisualization() {
   if (!globeInstance) return;
+
+  globeRenderEpoch += 1;
+  const currentEpoch = globeRenderEpoch;
 
   const origin = getOriginHub();
   const litDestinations = computedDestinations.filter(d => d.isLitUp);
@@ -801,6 +866,7 @@ function updateGlobeVisualization() {
 
   const points = [originMarker, ...litDestinations].map(p => ({ ...p }));
   const arcs = litDestinations.map(d => ({
+    id: d.id,
     startLat: origin.lat,
     startLng: origin.lng,
     endLat: d.lat,
@@ -810,17 +876,29 @@ function updateGlobeVisualization() {
       : ['rgba(56, 189, 248, 0.55)', 'rgba(245, 158, 11, 0.85)']
   }));
 
-  // Important: Flush Globe.gl's D3 HTML element cache & remove stale DOM nodes first
-  // so every pin is freshly recreated with the current matching locations and selected currency
-  globeInstance.htmlElementsData([]);
-  const stalePins = document.querySelectorAll('#globe-viz .globe-pin-wrapper');
-  stalePins.forEach(el => el.remove());
+  const validPinIds = new Set(points.map(p => String(p.id)));
+  const validDestIds = new Set(litDestinations.map(d => String(d.id)));
 
+  // Passing a fresh htmlElement function triggers purge:true inside Globe.gl's htmlElementsLayer
   globeInstance
     .pointsData(points)
     .ringsData(litDestinations)
     .arcsData(arcs)
-    .htmlElementsData(points);
+    .htmlElementsData(points)
+    .htmlElement(d => createGlobePinElement(d));
+
+  // Purge non-qualifying objects immediately and after Globe.gl's requestAnimationFrame digest
+  purgeNonQualifyingGlobeObjects(validPinIds, validDestIds, null);
+  requestAnimationFrame(() => {
+    if (currentEpoch === globeRenderEpoch) {
+      purgeNonQualifyingGlobeObjects(validPinIds, validDestIds, currentEpoch);
+    }
+  });
+  setTimeout(() => {
+    if (currentEpoch === globeRenderEpoch) {
+      purgeNonQualifyingGlobeObjects(validPinIds, validDestIds, currentEpoch);
+    }
+  }, 60);
 
   // If the user's filter narrows results down to 1–6 locations (and modal isn't open),
   // smoothly rotate the globe camera toward the matching location(s)
