@@ -74,7 +74,7 @@
     <div class="hidden xl:flex items-center gap-2 bg-slate-950/90 border border-slate-800 px-3.5 py-1.5 rounded-xl text-xs">
       <div class="flex items-center gap-1.5 text-amber-300 font-semibold">
         <i data-lucide="thermometer-sun" class="w-3.5 h-3.5"></i>
-        <span id="header-summary-temp">18°C – 32°C</span>
+        <span id="header-summary-temp">16°C – 34°C</span>
       </div>
       <span class="text-slate-700">•</span>
       <div class="flex items-center gap-1.5 text-cyan-300 font-semibold">
@@ -82,9 +82,14 @@
         <span id="header-summary-month">October (7 Days)</span>
       </div>
       <span class="text-slate-700">•</span>
+      <div class="flex items-center gap-1.5 text-pink-300 font-semibold">
+        <i data-lucide="users" class="w-3.5 h-3.5"></i>
+        <span id="header-summary-travellers">2 Adults</span>
+      </div>
+      <span class="text-slate-700">•</span>
       <div class="flex items-center gap-1.5 text-emerald-300 font-semibold">
         <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
-        <span id="header-summary-budget">Budget: £2,200</span>
+        <span id="header-summary-budget">Budget: £3,000</span>
       </div>
       <span class="text-slate-700">•</span>
       <div class="flex items-center gap-1.5 text-purple-300 font-semibold">
@@ -150,7 +155,7 @@
         </button>
       </div>
 
-      <div class="p-4 space-y-5 flex-1">
+      <div class="p-4 space-y-4 flex-1">
 
         <!-- 1. DESIRED WEATHER (TEMPERATURE) -->
         <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
@@ -233,24 +238,72 @@
           </div>
         </section>
 
-        <!-- 4. EXPECTED BUDGET (FLIGHT + HOTEL) -->
+        <!-- 4. NUMBER OF TRAVELLERS (ADULTS & CHILDREN) -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="users" class="w-4 h-4 text-pink-400"></i>
+              <span>4. Travellers (Adults &amp; Children)</span>
+            </label>
+            <span id="travellers-summary-badge" class="text-[10px] font-mono font-bold text-pink-300 bg-pink-500/15 border border-pink-500/30 px-2 py-0.5 rounded">2 Adults • 1 Room</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <!-- Adults Stepper -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-white">Adults</div>
+                <div class="text-[10px] text-slate-400">Age 12+</div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="adjustTravellers('adults', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
+                <span id="adults-count-label" class="w-4 text-center font-mono text-xs font-extrabold text-white">2</span>
+                <button type="button" onclick="adjustTravellers('adults', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
+              </div>
+            </div>
+
+            <!-- Children Stepper -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-white">Children</div>
+                <div class="text-[10px] text-slate-400">Age 2–11 (25% off air)</div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="adjustTravellers('children', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
+                <span id="children-count-label" class="w-4 text-center font-mono text-xs font-extrabold text-pink-300">0</span>
+                <button type="button" onclick="adjustTravellers('children', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Traveller Party Presets -->
+          <div class="flex flex-wrap gap-1 pt-0.5">
+            <button type="button" onclick="setTravellerParty(1, 0)" class="flex-1 py-1 px-1.5 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 whitespace-nowrap">👤 Solo (1A)</button>
+            <button type="button" onclick="setTravellerParty(2, 0)" class="flex-1 py-1 px-1.5 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 whitespace-nowrap">👫 Couple (2A)</button>
+            <button type="button" onclick="setTravellerParty(2, 1)" class="flex-1 py-1 px-1.5 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 whitespace-nowrap">👨‍👩‍👧 2A+1C</button>
+            <button type="button" onclick="setTravellerParty(2, 2)" class="flex-1 py-1 px-1.5 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 whitespace-nowrap">👨‍👩‍👧‍👦 2A+2C</button>
+            <button type="button" onclick="setTravellerParty(4, 0)" class="flex-1 py-1 px-1.5 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 whitespace-nowrap">👥 4A</button>
+          </div>
+        </section>
+
+        <!-- 5. EXPECTED BUDGET (FLIGHT + HOTEL) -->
         <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-white flex items-center gap-1.5">
               <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
-              <span>4. Total Budget (Flight + Hotel)</span>
+              <span>5. Total Budget (All Travellers)</span>
             </label>
-            <span id="budget-display-badge" class="text-xs font-mono font-extrabold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">£2,200</span>
+            <span id="budget-display-badge" class="text-xs font-mono font-extrabold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">£3,000</span>
           </div>
 
-          <input type="range" id="budget-slider" min="300" max="8000" step="50" value="2200" oninput="setBudgetGBP(this.value)" class="w-full" />
+          <input type="range" id="budget-slider" min="300" max="15000" step="100" value="3000" oninput="setBudgetGBP(this.value)" class="w-full" />
 
           <!-- Direct numeric budget box & Quick Budget Tiers -->
           <div class="flex items-center justify-between gap-1.5 pt-0.5">
-            <button onclick="setBudgetGBP(800)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-1">£800</button>
-            <button onclick="setBudgetGBP(1500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-2">£1,500</button>
-            <button onclick="setBudgetGBP(2500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-3">£2,500</button>
-            <button onclick="setBudgetGBP(5000)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-4">£5,000+</button>
+            <button onclick="setBudgetGBP(1200)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-1">£1,200</button>
+            <button onclick="setBudgetGBP(2500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-2">£2,500</button>
+            <button onclick="setBudgetGBP(4500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-3">£4,500</button>
+            <button onclick="setBudgetGBP(8000)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-4">£8,000+</button>
           </div>
 
           <label class="flex items-center justify-between text-[11px] text-slate-400 pt-1 cursor-pointer">
@@ -259,12 +312,12 @@
           </label>
         </section>
 
-        <!-- 5. SEASONALITY: OFF-PEAK / ON-PEAK LOCATIONS -->
+        <!-- 6. SEASONALITY: OFF-PEAK / ON-PEAK LOCATIONS -->
         <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-white flex items-center gap-1.5">
               <i data-lucide="compass" class="w-4 h-4 text-rose-400"></i>
-              <span>5. Crowd &amp; Seasonality</span>
+              <span>6. Crowd &amp; Seasonality</span>
             </label>
           </div>
 
@@ -284,12 +337,12 @@
           </div>
         </section>
 
-        <!-- 6. HOTEL ACCOMMODATION PREFERENCE (5★, 4★, 3★, Airbnb - Choose Any or All) -->
+        <!-- 7. HOTEL ACCOMMODATION PREFERENCE (5★, 4★, 3★, Airbnb - Choose Any or All) -->
         <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-white flex items-center gap-1.5">
               <i data-lucide="hotel" class="w-4 h-4 text-amber-400"></i>
-              <span>6. Accommodation Preference</span>
+              <span>7. Accommodation Preference</span>
             </label>
             <button onclick="selectAllAccommodationTiers()" class="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline">
               Select All (4)

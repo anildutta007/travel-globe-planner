@@ -11,7 +11,9 @@ const state = {
   maxTempC: 34,
   monthIndex: 9, // Default: October (0 = Jan, 9 = Oct)
   tripDays: 7,
-  budgetGBP: 2200,
+  adults: 2,
+  children: 0,
+  budgetGBP: 3000,
   strictBudget: true,
   seasonFilter: 'both', // 'both' | 'off-peak' | 'on-peak'
   selectedAccommodations: ['5star', '4star', '3star', 'airbnb'], // User can choose any or all
@@ -180,6 +182,19 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   return Math.round(R * c);
 }
 
+function getHotelRoomsCount() {
+  return Math.max(1, Math.ceil((state.adults + state.children * 0.5) / 2));
+}
+
+function getTravellersLabel(short = false) {
+  if (short) {
+    return state.children > 0 ? `${state.adults}A + ${state.children}C` : `${state.adults}A`;
+  }
+  const aText = `${state.adults} Adult${state.adults > 1 ? 's' : ''}`;
+  const cText = state.children > 0 ? `, ${state.children} Child${state.children > 1 ? 'ren' : ''}` : '';
+  return `${aText}${cText}`;
+}
+
 /**
  * Computes Flight Cost, Hotel Cost per tier, Total Cost, Weather & Match Status for a destination
  */
@@ -197,7 +212,7 @@ function evaluateDestination(dest) {
   const flightSeasonMultiplier = isOnPeak ? 1.14 : 0.88;
   const hotelSeasonMultiplier = isOnPeak ? 1.15 : 0.85;
 
-  // Dynamic flight pricing: uses curated London baseline if flying from UK, or distance-calibrated pricing from other global hubs
+  // Dynamic flight pricing per 1 Adult: uses curated London baseline if flying from UK, or distance-calibrated pricing from other global hubs
   let rawFlightGBP = dest.baseFlightGBP;
   if (origin.id !== 'LON') {
     if (distanceKm < 450) {
@@ -208,17 +223,33 @@ function evaluateDestination(dest) {
       rawFlightGBP = Math.round(140 + distanceKm * 0.056);
     }
   }
-  const flightCostGBP = Math.max(48, Math.round((rawFlightGBP * flightSeasonMultiplier) / 5) * 5);
+  const singleAdultFlightGBP = Math.max(48, Math.round((rawFlightGBP * flightSeasonMultiplier) / 5) * 5);
+  const singleChildFlightGBP = Math.round(singleAdultFlightGBP * 0.75);
+  const flightCostGBP = (state.adults * singleAdultFlightGBP) + (state.children * singleChildFlightGBP);
 
-  // Calculate Hotel & Combined Total across all 4 accommodation tiers for state.tripDays
+  // Calculate Hotel & Combined Total across all 4 accommodation tiers for state.tripDays & traveller party
   const nights = Math.max(1, state.tripDays);
+  const roomsNeeded = getHotelRoomsCount();
+  const totalTravellers = Math.max(1, state.adults + state.children);
   const tierBreakdowns = {};
 
   ACCOMMODATION_TIERS.forEach(tier => {
     const baseNightly = dest.hotelsGBP[tier.id] || 100;
-    const nightlyGBP = Math.max(25, Math.round(baseNightly * hotelSeasonMultiplier));
+    // Hotels scale by number of rooms needed (+15% child family-bed supplement if sharing); Airbnbs scale gently for larger multi-bedroom rentals
+    let occupancyMultiplier = 1;
+    if (tier.id === 'airbnb') {
+      occupancyMultiplier = 1 + Math.max(0, totalTravellers - 2) * 0.18;
+    } else {
+      const extraChildSupplement = (state.children > 0 && roomsNeeded === Math.ceil(state.adults / 2))
+        ? state.children * 0.15
+        : 0;
+      occupancyMultiplier = roomsNeeded + extraChildSupplement;
+    }
+
+    const nightlyGBP = Math.max(25, Math.round(baseNightly * hotelSeasonMultiplier * occupancyMultiplier));
     const hotelTotalGBP = nightlyGBP * nights;
     const combinedTotalGBP = flightCostGBP + hotelTotalGBP;
+    const perPersonGBP = Math.round(combinedTotalGBP / totalTravellers);
     const withinBudget = combinedTotalGBP <= state.budgetGBP;
 
     tierBreakdowns[tier.id] = {
@@ -230,6 +261,8 @@ function evaluateDestination(dest) {
       hotelTotalGBP,
       flightCostGBP,
       combinedTotalGBP,
+      perPersonGBP,
+      roomsNeeded: tier.id === 'airbnb' ? 1 : roomsNeeded,
       withinBudget,
       exampleProperty: dest.hotelExamples[tier.id]
     };
@@ -268,8 +301,12 @@ function evaluateDestination(dest) {
     sunHours,
     isOnPeak,
     seasonType,
+    singleAdultFlightGBP,
+    singleChildFlightGBP,
     flightCostGBP,
     nights,
+    roomsNeeded,
+    totalTravellers,
     tierBreakdowns,
     selectedTierObjs,
     fittingTiers,
@@ -345,8 +382,23 @@ function adjustTripDays(delta) {
   setTripDays(state.tripDays + delta);
 }
 
+function adjustTravellers(type, delta) {
+  if (type === 'adults') {
+    state.adults = Math.max(1, Math.min(10, state.adults + delta));
+  } else if (type === 'children') {
+    state.children = Math.max(0, Math.min(8, state.children + delta));
+  }
+  handleFilterChange();
+}
+
+function setTravellerParty(adults, children) {
+  state.adults = Math.max(1, Math.min(10, parseInt(adults, 10) || 1));
+  state.children = Math.max(0, Math.min(8, parseInt(children, 10) || 0));
+  handleFilterChange();
+}
+
 function setBudgetGBP(val) {
-  state.budgetGBP = parseInt(val, 10) || 2200;
+  state.budgetGBP = parseInt(val, 10) || 3000;
   const slider = document.getElementById('budget-slider');
   if (slider) slider.value = state.budgetGBP;
   handleFilterChange();
@@ -394,7 +446,7 @@ function selectAllAccommodationTiers() {
 function handleCurrencyChange(currCode) {
   state.currency = currCode;
   // Update preset budget labels
-  const presets = [800, 1500, 2500, 5000];
+  const presets = [1200, 2500, 4500, 8000];
   presets.forEach((val, idx) => {
     const el = document.getElementById(`preset-budget-${idx + 1}`);
     if (el) el.textContent = idx === 3 ? `${formatMoney(val)}+` : formatMoney(val);
@@ -407,7 +459,9 @@ function resetAllFilters() {
   state.maxTempC = 35;
   state.monthIndex = 9;
   state.tripDays = 7;
-  state.budgetGBP = 2200;
+  state.adults = 2;
+  state.children = 0;
+  state.budgetGBP = 3000;
   state.strictBudget = true;
   state.seasonFilter = 'both';
   state.selectedAccommodations = ['5star', '4star', '3star', 'airbnb'];
@@ -427,6 +481,8 @@ function resetAllFilters() {
 
 function updateFilterLabels() {
   const monthMeta = MONTHS_META[state.monthIndex];
+  const rooms = getHotelRoomsCount();
+  const travLabel = getTravellersLabel(false);
 
   document.getElementById('min-temp-badge').textContent = formatTemp(state.minTempC);
   document.getElementById('max-temp-badge').textContent = formatTemp(state.maxTempC);
@@ -434,9 +490,18 @@ function updateFilterLabels() {
   document.getElementById('trip-days-badge').textContent = `${state.tripDays} Days`;
   document.getElementById('budget-display-badge').textContent = formatMoney(state.budgetGBP);
 
+  const adultsEl = document.getElementById('adults-count-label');
+  const childrenEl = document.getElementById('children-count-label');
+  const travBadge = document.getElementById('travellers-summary-badge');
+  if (adultsEl) adultsEl.textContent = state.adults;
+  if (childrenEl) childrenEl.textContent = state.children;
+  if (travBadge) travBadge.textContent = `${travLabel} • ${rooms} Room${rooms > 1 ? 's' : ''}`;
+
   // Top Header Live Summary
   document.getElementById('header-summary-temp').textContent = `${formatTemp(state.minTempC)} – ${formatTemp(state.maxTempC)}`;
   document.getElementById('header-summary-month').textContent = `${monthMeta.full} (${state.tripDays} Days)`;
+  const headerTrav = document.getElementById('header-summary-travellers');
+  if (headerTrav) headerTrav.textContent = travLabel;
   document.getElementById('header-summary-budget').textContent = `Budget: ${formatMoney(state.budgetGBP)}`;
 }
 
@@ -848,7 +913,7 @@ function renderMatchingDestinationsList() {
 
   const monthName = MONTHS_META[state.monthIndex].full;
   countHeading.textContent = `${matches.length} Locations Lit Up on Globe`;
-  subtitle.textContent = `${monthName} • ${state.tripDays} Days • ${state.selectedAccommodations.length} Hotel Tier(s) Selected`;
+  subtitle.textContent = `${monthName} • ${state.tripDays} Days • ${getTravellersLabel(false)}`;
 
   if (matches.length === 0) {
     listEl.innerHTML = `
@@ -858,7 +923,7 @@ function renderMatchingDestinationsList() {
         </div>
         <h3 class="text-sm font-bold text-white">No Destinations Match Strict Filters</h3>
         <p class="text-xs text-slate-400">
-          Try widening your temperature range (${formatTemp(state.minTempC)}–${formatTemp(state.maxTempC)}), increasing your total budget (${formatMoney(state.budgetGBP)}), or unchecking "Strictly hide locations over budget".
+          Try widening your temperature range (${formatTemp(state.minTempC)}–${formatTemp(state.maxTempC)}), increasing your total budget (${formatMoney(state.budgetGBP)} for ${getTravellersLabel(false)}), or unchecking "Strictly hide locations over budget".
         </p>
         <button onclick="resetAllFilters()" class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition">
           Reset Filters to Default
@@ -913,7 +978,7 @@ function renderMatchingDestinationsList() {
         <!-- Middle Row: Expected Flying Cost + Hotel Cost Highlight -->
         <div class="bg-slate-900/90 border border-slate-800/90 rounded-lg p-2 flex items-center justify-between text-xs">
           <div class="space-y-0.5">
-            <div class="text-[10px] text-slate-400">Return Flight + ${state.tripDays}d ${tier.shortLabel}</div>
+            <div class="text-[10px] text-slate-400">Flights (${getTravellersLabel(true)}) + ${state.tripDays}d ${tier.shortLabel}</div>
             <div class="font-mono text-[11px] text-slate-200">
               <span class="text-cyan-300 font-semibold">✈️ ${formatMoney(d.flightCostGBP)}</span>
               <span class="text-slate-500 mx-1">+</span>
@@ -1030,9 +1095,9 @@ function renderDestinationModalContent(dest) {
   ).join('');
 
   document.getElementById('modal-cost-heading').textContent =
-    `Expected Flying Cost + Hotel Cost (${state.tripDays} Days in ${monthMeta.full})`;
+    `Expected Flying + Hotel Cost (${state.tripDays} Days • ${getTravellersLabel(false)} in ${monthMeta.full})`;
   document.getElementById('modal-route-meta').textContent =
-    `${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ~${dest.estFlightHours}h Flight • ${dest.distanceKm.toLocaleString()} km`;
+    `${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ~${dest.estFlightHours}h Flight • ${getHotelRoomsCount()} Room(s)`;
 
   // Render all 4 Accommodation Tiers (highlighting the ones the user checked + allowing click to switch)
   const cardsContainer = document.getElementById('modal-accommodation-cards');
@@ -1041,6 +1106,9 @@ function renderDestinationModalContent(dest) {
     const isUserChecked = state.selectedAccommodations.includes(tierMeta.id);
     const isActive = state.activeModalTier === tierMeta.id;
     const budgetDiff = state.budgetGBP - t.combinedTotalGBP;
+    const stayRoomLabel = tierMeta.id === 'airbnb'
+      ? 'Entire Rental'
+      : `${t.roomsNeeded} Room${t.roomsNeeded > 1 ? 's' : ''}`;
 
     return `
       <div
@@ -1065,21 +1133,22 @@ function renderDestinationModalContent(dest) {
 
         <div class="space-y-1 pt-2 border-t border-slate-800 text-xs font-mono">
           <div class="flex justify-between text-[11px] text-slate-300">
-            <span>✈️ Return Flight:</span>
+            <span>✈️ Flights (${getTravellersLabel(true)}):</span>
             <span class="text-cyan-300 font-semibold">${formatMoney(t.flightCostGBP)}</span>
           </div>
           <div class="flex justify-between text-[11px] text-slate-300">
-            <span>🏨 Hotel (${state.tripDays}n × ${formatMoney(t.nightlyGBP)}):</span>
+            <span>🏨 ${state.tripDays}n (${stayRoomLabel}):</span>
             <span class="text-amber-300 font-semibold">${formatMoney(t.hotelTotalGBP)}</span>
           </div>
           <div class="flex justify-between items-baseline pt-1.5 border-t border-slate-800/80">
-            <span class="text-[11px] font-sans font-bold text-white">Total Trip:</span>
+            <span class="text-[11px] font-sans font-bold text-white">Total (${getTravellersLabel(true)}):</span>
             <span class="text-base font-extrabold ${t.withinBudget ? 'text-emerald-400' : 'text-amber-400'}">${formatMoney(t.combinedTotalGBP)}</span>
           </div>
-          <div class="text-[10px] font-sans font-semibold ${t.withinBudget ? 'text-emerald-400' : 'text-amber-400'}">
-            ${t.withinBudget
-              ? `✅ ${formatMoney(budgetDiff)} under your budget`
-              : `⚠️ ${formatMoney(Math.abs(budgetDiff))} above budget`}
+          <div class="flex items-center justify-between text-[10px] font-sans">
+            <span class="text-slate-400">~${formatMoney(t.perPersonGBP)}/person</span>
+            <span class="font-semibold ${t.withinBudget ? 'text-emerald-400' : 'text-amber-400'}">
+              ${t.withinBudget ? `✅ -${formatMoney(budgetDiff)}` : `⚠️ +${formatMoney(Math.abs(budgetDiff))}`}
+            </span>
           </div>
         </div>
       </div>
@@ -1088,7 +1157,7 @@ function renderDestinationModalContent(dest) {
 
   // Update Itinerary Prompt Question
   document.getElementById('itinerary-prompt-question').textContent =
-    `Would you like the tool to create a custom ${state.tripDays}-Day Itinerary for ${dest.city}?`;
+    `Would you like the tool to create a custom ${state.tripDays}-Day Itinerary for ${dest.city} (${getTravellersLabel(false)})?`;
   document.getElementById('itinerary-prompt-month').textContent =
     `${monthMeta.full} (${formatTemp(dest.tempC)}, ${dest.isOnPeak ? 'On-Peak' : 'Off-Peak'})`;
 
@@ -1136,12 +1205,12 @@ function generateDestinationItinerary() {
 
     let dayTitle = `Exploring ${hood} & Signature Highlights`;
     let morningPlan = `Start your morning in **${hood}** enjoying ${formatTemp(dest.tempC)} ${monthMeta.full} weather. Experience: ${highlightA}.`;
-    let afternoonPlan = `Savor a local lunch featuring **${dish}**, followed by a curated ${style} afternoon session: ${highlightB}.`;
+    let afternoonPlan = `Savor a local lunch featuring **${dish}**, followed by a curated ${style} afternoon session${state.children > 0 ? ' (with family-friendly pacing)' : ''}: ${highlightB}.`;
     let eveningPlan = `Return to your **${activeTierObj.label}** stay (${activeTierObj.exampleProperty.split('/')[0].trim()}) to refresh, then head out for a sunset dinner tasting **${dishEvening}**.`;
 
     if (d === 1) {
       dayTitle = `Arrival in ${dest.city}, Check-In & Twilight Orientation`;
-      morningPlan = `Touch down at **${dest.city} (${dest.iata})** and transfer to **${hood}**. Check into your ${activeTierObj.label} accommodation (*${activeTierObj.exampleProperty}*).`;
+      morningPlan = `Touch down at **${dest.city} (${dest.iata})** with your party (${getTravellersLabel(false)}) and transfer to **${hood}**. Check into your ${activeTierObj.label} accommodation (*${activeTierObj.exampleProperty}*).`;
       afternoonPlan = `Take a gentle orientation walk through **${hood}** to soak in the ${formatTemp(dest.tempC)} climate and visit: ${highlightA}.`;
       eveningPlan = `Welcome dinner in ${hood} sampling authentic **${dish}** and **${dishEvening}** with panoramic evening views.`;
     } else if (d === days) {
@@ -1185,6 +1254,12 @@ function generateDestinationItinerary() {
     ? `<strong>On-Peak Insider Tip (${monthMeta.full}):</strong> ${monthMeta.full} is prime season in ${dest.city}. Book morning timed-entry tickets for flagship sights 2–3 weeks ahead and reserve dinner tables for 8:00 PM.`
     : `<strong>Off-Peak Value Tip (${monthMeta.full}):</strong> Visiting ${dest.city} in ${monthMeta.full} means ~15% lower hotel rates and shorter queues at major landmarks while enjoying ${formatTemp(dest.tempC)} daytime highs.`;
 
+  const familyTipHtml = state.children > 0
+    ? `<div class="bg-pink-950/30 border border-pink-500/30 rounded-xl p-3 text-xs text-pink-200">
+        👨‍👩‍👧‍👦 <strong>Family Travel Note (${getTravellersLabel(false)}):</strong> Child airfares include a 25% youth discount (${formatMoney(dest.singleChildFlightGBP)}/child vs ${formatMoney(dest.singleAdultFlightGBP)}/adult) and many museums/attractions in ${dest.city} offer discounted or free entry for under-12s.
+      </div>`
+    : '';
+
   container.innerHTML = `
     <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-xl p-3">
       <div>
@@ -1192,7 +1267,7 @@ function generateDestinationItinerary() {
           ✅ Custom ${days}-Day ${dest.city} Itinerary Ready (${styleDescriptions[style]})
         </div>
         <div class="text-[11px] text-slate-400 mt-0.5">
-          Tailored for ${monthMeta.full} • ${activeTierObj.label} (${formatMoney(activeTierObj.combinedTotalGBP)} Total Flight + Stay)
+          Tailored for ${getTravellersLabel(false)} in ${monthMeta.full} • ${activeTierObj.label} (${formatMoney(activeTierObj.combinedTotalGBP)} Total Flight + Stay)
         </div>
       </div>
       <div class="no-print flex items-center gap-2">
@@ -1210,6 +1285,7 @@ function generateDestinationItinerary() {
     <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200">
       💡 ${seasonTip}
     </div>
+    ${familyTipHtml}
 
     <div class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
       ${dayCardsHtml.join('')}
@@ -1271,24 +1347,27 @@ function renderDirectBookingLinks(dest) {
   const activeTierObj = dest.tierBreakdowns[state.activeModalTier] || dest.primaryTier;
   const cityCountryEncoded = encodeURIComponent(`${dest.city}, ${dest.country}`);
   const cityEncoded = encodeURIComponent(dest.city);
+  const rooms = getHotelRoomsCount();
 
   document.getElementById('booking-links-subtitle').textContent =
-    `Direct booking links for ${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ${dates.checkinISO} to ${dates.checkoutISO} (${state.tripDays} Nights)`;
-  document.getElementById('booking-flight-price-pill').textContent = `Est. ${formatMoney(dest.flightCostGBP)} return`;
+    `Direct booking links for ${getTravellersLabel(false)} • ${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ${dates.checkinISO} to ${dates.checkoutISO} (${state.tripDays} Nights)`;
+  document.getElementById('booking-flight-price-pill').textContent =
+    `Est. ${formatMoney(dest.flightCostGBP)} (${getTravellersLabel(true)})`;
   document.getElementById('booking-hotel-price-pill').textContent =
     `${activeTierObj.shortLabel}: ${formatMoney(activeTierObj.hotelTotalGBP)}`;
 
-  // 1. Flight Links
-  const skyscannerUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/`;
-  const googleFlightsUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights from ${origin.iata} to ${dest.iata} on ${dates.checkinISO} through ${dates.checkoutISO}`)}`;
-  const kayakFlightsUrl = `https://www.kayak.co.uk/flights/${origin.iata}-${dest.iata}/${dates.checkinISO}/${dates.checkoutISO}?sort=bestflight_a`;
-  const expediaFlightsUrl = `https://www.expedia.co.uk/Flights-Search?trip=roundtrip&leg1=from:${origin.city},to:${dest.city},departure:${dates.checkinISO}TANYT&leg2=from:${dest.city},to:${origin.city},departure:${dates.checkoutISO}TANYT&passengers=adults:1&mode=search`;
+  // 1. Flight Links (Pre-filled with Adults & Children)
+  const skyscannerUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}`;
+  const googleFlightsUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights from ${origin.iata} to ${dest.iata} on ${dates.checkinISO} through ${dates.checkoutISO} for ${state.adults} adults${state.children > 0 ? ' and ' + state.children + ' children' : ''}`)}`;
+  const kayakPaxPath = `${state.adults}adults${state.children > 0 ? '/children-' + Array(state.children).fill('8').join('-') : ''}`;
+  const kayakFlightsUrl = `https://www.kayak.co.uk/flights/${origin.iata}-${dest.iata}/${dates.checkinISO}/${dates.checkoutISO}/${kayakPaxPath}?sort=bestflight_a`;
+  const expediaFlightsUrl = `https://www.expedia.co.uk/Flights-Search?trip=roundtrip&leg1=from:${origin.city},to:${dest.city},departure:${dates.checkinISO}TANYT&leg2=from:${dest.city},to:${origin.city},departure:${dates.checkoutISO}TANYT&passengers=adults:${state.adults},children:${state.children}&mode=search`;
 
   const flightPortals = [
-    { name: 'Skyscanner', sub: 'Compare all airlines', url: skyscannerUrl, badge: 'Popular' },
-    { name: 'Google Flights', sub: 'Live fare calendar', url: googleFlightsUrl, badge: 'Fast' },
-    { name: 'Kayak Flights', sub: 'Flexible date matrix', url: kayakFlightsUrl, badge: 'Deals' },
-    { name: 'Expedia Flights', sub: 'Flight + bundle options', url: expediaFlightsUrl, badge: 'ATOL' }
+    { name: 'Skyscanner', sub: `Compare airlines (${getTravellersLabel(true)})`, url: skyscannerUrl, badge: 'Popular' },
+    { name: 'Google Flights', sub: `Live fare matrix (${getTravellersLabel(true)})`, url: googleFlightsUrl, badge: 'Fast' },
+    { name: 'Kayak Flights', sub: `Flexible dates (${getTravellersLabel(true)})`, url: kayakFlightsUrl, badge: 'Deals' },
+    { name: 'Expedia Flights', sub: `Flight + bundle (${getTravellersLabel(true)})`, url: expediaFlightsUrl, badge: 'ATOL' }
   ];
 
   document.getElementById('modal-flight-links').innerHTML = flightPortals.map(p => `
@@ -1308,7 +1387,7 @@ function renderDirectBookingLinks(dest) {
     </a>
   `).join('');
 
-  // 2. Hotel & Airbnb Links (incorporating user's 5★, 4★, 3★, and Airbnb preferences)
+  // 2. Hotel & Airbnb Links (incorporating user's 5★, 4★, 3★, Airbnb preferences + Adults/Children/Rooms)
   const selectedStars = state.selectedAccommodations
     .filter(id => id !== 'airbnb')
     .map(id => id.replace('star', ''));
@@ -1316,16 +1395,16 @@ function renderDirectBookingLinks(dest) {
     ? encodeURIComponent(selectedStars.map(s => `class=${s}`).join(';'))
     : encodeURIComponent('class=3;class=4;class=5');
 
-  const bookingComUrl = `https://www.booking.com/searchresults.html?ss=${cityCountryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=2&no_rooms=1&nflt=${nfltParam}`;
-  const airbnbUrl = `https://www.airbnb.co.uk/s/${cityEncoded}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=2`;
-  const hotelsComUrl = `https://uk.hotels.com/Hotel-Search?destination=${cityCountryEncoded}&startDate=${dates.checkinISO}&endDate=${dates.checkoutISO}&adults=2`;
-  const expediaHotelsUrl = `https://www.expedia.co.uk/Hotel-Search?destination=${cityCountryEncoded}&startDate=${dates.checkinISO}&endDate=${dates.checkoutISO}&adults=2`;
+  const bookingComUrl = `https://www.booking.com/searchresults.html?ss=${cityCountryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${rooms}&nflt=${nfltParam}`;
+  const airbnbUrl = `https://www.airbnb.co.uk/s/${cityEncoded}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}`;
+  const hotelsComUrl = `https://uk.hotels.com/Hotel-Search?destination=${cityCountryEncoded}&startDate=${dates.checkinISO}&endDate=${dates.checkoutISO}&adults=${state.adults}${state.children > 0 ? '&children=' + Array(state.children).fill('8').join(',') : ''}`;
+  const expediaHotelsUrl = `https://www.expedia.co.uk/Hotel-Search?destination=${cityCountryEncoded}&startDate=${dates.checkinISO}&endDate=${dates.checkoutISO}&adults=${state.adults}${state.children > 0 ? '&children=' + Array(state.children).fill('8').join(',') : ''}`;
 
   const hotelPortals = [
-    { name: 'Booking.com', sub: `Filtered for ${selectedStars.length ? selectedStars.map(s => s + '★').join('/') : '3★–5★'}`, url: bookingComUrl },
-    { name: 'Airbnb Stays', sub: 'Entire apartments & villas', url: airbnbUrl },
-    { name: 'Hotels.com', sub: 'Member prices & rewards', url: hotelsComUrl },
-    { name: 'Expedia Stays', sub: '5★, 4★ & boutique resorts', url: expediaHotelsUrl }
+    { name: 'Booking.com', sub: `${selectedStars.length ? selectedStars.map(s => s + '★').join('/') : '3★–5★'} • ${rooms} Room(s)`, url: bookingComUrl },
+    { name: 'Airbnb Stays', sub: `Entire homes (${getTravellersLabel(true)})`, url: airbnbUrl },
+    { name: 'Hotels.com', sub: `Member rates (${getTravellersLabel(true)})`, url: hotelsComUrl },
+    { name: 'Expedia Stays', sub: `5★, 4★ & resorts (${getTravellersLabel(true)})`, url: expediaHotelsUrl }
   ];
 
   document.getElementById('modal-hotel-links').innerHTML = hotelPortals.map(p => `
