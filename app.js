@@ -67,6 +67,7 @@ let computedDestinations = [];
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
   initOriginHubSelect();
+  initCurrencySelects();
   initMonthGrid();
   initAccommodationCheckboxes();
   updateFilterLabels();
@@ -84,11 +85,64 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initOriginHubSelect() {
-  const select = document.getElementById('origin-hub-select');
-  if (!select) return;
-  select.innerHTML = DEPARTURE_HUBS.map(hub =>
-    `<option value="${hub.id}" ${hub.id === state.originHubId ? 'selected' : ''}>${hub.flag} ${hub.city} (${hub.iata})</option>`
-  ).join('');
+  const headerSelect = document.getElementById('origin-hub-select');
+  if (headerSelect) {
+    headerSelect.innerHTML = DEPARTURE_HUBS.map(hub =>
+      `<option value="${hub.id}" ${hub.id === state.originHubId ? 'selected' : ''}>${hub.flag} ${hub.city} (${hub.iata})</option>`
+    ).join('');
+  }
+
+  const sidebarSelect = document.getElementById('sidebar-origin-select');
+  if (sidebarSelect) {
+    const regions = [...new Set(DEPARTURE_HUBS.map(h => h.region || 'Global'))];
+    sidebarSelect.innerHTML = regions.map(region => {
+      const hubsInRegion = DEPARTURE_HUBS.filter(h => (h.region || 'Global') === region);
+      const optionsHtml = hubsInRegion.map(hub =>
+        `<option value="${hub.id}" ${hub.id === state.originHubId ? 'selected' : ''}>${hub.flag} ${hub.name}</option>`
+      ).join('');
+      return `<optgroup label="${region}">${optionsHtml}</optgroup>`;
+    }).join('');
+  }
+}
+
+function initCurrencySelects() {
+  const currKeys = Object.keys(CURRENCIES);
+  const headerCurr = document.getElementById('currency-select');
+  if (headerCurr) {
+    headerCurr.innerHTML = currKeys.map(code => {
+      const c = CURRENCIES[code];
+      return `<option value="${code}" ${code === state.currency ? 'selected' : ''}>${c.flag || ''} ${c.symbol.trim()} ${c.code}</option>`;
+    }).join('');
+  }
+
+  const sidebarCurr = document.getElementById('sidebar-currency-select');
+  if (sidebarCurr) {
+    sidebarCurr.innerHTML = currKeys.map(code => {
+      const c = CURRENCIES[code];
+      return `<option value="${code}" ${code === state.currency ? 'selected' : ''}>${c.flag || ''} ${c.name}</option>`;
+    }).join('');
+  }
+
+  const pillsContainer = document.getElementById('sidebar-currency-pills');
+  if (pillsContainer) {
+    const quickCodes = ['GBP', 'USD', 'EUR', 'INR', 'AED', 'AUD', 'CAD', 'SGD', 'CHF', 'JPY'];
+    pillsContainer.innerHTML = quickCodes.map(code => {
+      const isSelected = code === state.currency;
+      return `
+        <button
+          type="button"
+          onclick="handleCurrencyChange('${code}')"
+          class="py-1 px-1 rounded text-[10px] font-mono font-bold transition border ${
+            isSelected
+              ? 'bg-emerald-600 text-white border-emerald-400 shadow'
+              : 'bg-slate-900 text-slate-300 hover:text-white border-slate-800'
+          }"
+        >
+          ${code}
+        </button>
+      `;
+    }).join('');
+  }
 }
 
 function initMonthGrid() {
@@ -397,11 +451,45 @@ function setTravellerParty(adults, children) {
   handleFilterChange();
 }
 
-function setBudgetGBP(val) {
-  state.budgetGBP = parseInt(val, 10) || 3000;
-  const slider = document.getElementById('budget-slider');
-  if (slider) slider.value = state.budgetGBP;
+function setOriginHub(hubId, flyToOrigin = false) {
+  if (!hubId) return;
+  state.originHubId = hubId;
+  const headerSelect = document.getElementById('origin-hub-select');
+  const sidebarSelect = document.getElementById('sidebar-origin-select');
+  if (headerSelect) headerSelect.value = hubId;
+  if (sidebarSelect) sidebarSelect.value = hubId;
+
   handleFilterChange();
+
+  if (flyToOrigin) {
+    focusOriginOnGlobe();
+  }
+}
+
+function focusOriginOnGlobe() {
+  const origin = getOriginHub();
+  if (!origin) return;
+  if (state.mapMode === '3d' && globeInstance) {
+    globeInstance.pointOfView({ lat: origin.lat, lng: origin.lng, altitude: 1.75 }, 950);
+  } else if (state.mapMode === '2d' && leafletMap) {
+    leafletMap.flyTo([origin.lat, origin.lng], 4, { duration: 0.9 });
+  }
+}
+
+function setBudgetGBP(val) {
+  state.budgetGBP = Math.max(200, Math.min(25000, parseInt(val, 10) || 3000));
+  const slider = document.getElementById('budget-slider');
+  if (slider) slider.value = Math.min(15000, Math.max(300, state.budgetGBP));
+  handleFilterChange();
+}
+
+function setBudgetInSelectedCurrency(amountInCurr) {
+  const curr = CURRENCIES[state.currency] || CURRENCIES.GBP;
+  const parsed = parseFloat(amountInCurr);
+  if (!isNaN(parsed) && parsed > 0) {
+    const gbpEquivalent = Math.round(parsed / curr.rate);
+    setBudgetGBP(gbpEquivalent);
+  }
 }
 
 function setSeasonFilter(mode) {
@@ -444,7 +532,10 @@ function selectAllAccommodationTiers() {
 }
 
 function handleCurrencyChange(currCode) {
+  if (!CURRENCIES[currCode]) return;
   state.currency = currCode;
+  initCurrencySelects();
+
   // Update preset budget labels
   const presets = [1200, 2500, 4500, 8000];
   presets.forEach((val, idx) => {
@@ -455,6 +546,8 @@ function handleCurrencyChange(currCode) {
 }
 
 function resetAllFilters() {
+  state.originHubId = 'LON';
+  state.currency = 'GBP';
   state.minTempC = 14;
   state.maxTempC = 35;
   state.monthIndex = 9;
@@ -473,22 +566,46 @@ function resetAllFilters() {
   document.getElementById('strict-budget-toggle').checked = true;
   document.getElementById('dest-search-input').value = '';
 
+  initOriginHubSelect();
+  initCurrencySelects();
   initMonthGrid();
   setSeasonFilter('both');
   initAccommodationCheckboxes();
-  handleFilterChange();
+  handleCurrencyChange('GBP');
 }
 
 function updateFilterLabels() {
   const monthMeta = MONTHS_META[state.monthIndex];
   const rooms = getHotelRoomsCount();
   const travLabel = getTravellersLabel(false);
+  const origin = getOriginHub();
+  const curr = CURRENCIES[state.currency] || CURRENCIES.GBP;
 
   document.getElementById('min-temp-badge').textContent = formatTemp(state.minTempC);
   document.getElementById('max-temp-badge').textContent = formatTemp(state.maxTempC);
   document.getElementById('selected-month-label').textContent = monthMeta.full;
   document.getElementById('trip-days-badge').textContent = `${state.tripDays} Days`;
   document.getElementById('budget-display-badge').textContent = formatMoney(state.budgetGBP);
+
+  const originBadge = document.getElementById('sidebar-origin-iata-badge');
+  if (originBadge && origin) {
+    originBadge.textContent = `${origin.flag} ${origin.city} (${origin.iata})`;
+  }
+
+  const currBadge = document.getElementById('sidebar-currency-badge');
+  if (currBadge && curr) {
+    currBadge.textContent = `${curr.flag || ''} ${curr.symbol.trim()} ${curr.code}`;
+  }
+
+  const budgetCurrCodeEl = document.getElementById('budget-input-curr-code');
+  if (budgetCurrCodeEl && curr) {
+    budgetCurrCodeEl.textContent = `${curr.code} (${curr.symbol.trim()})`;
+  }
+
+  const budgetCustomInput = document.getElementById('budget-custom-input');
+  if (budgetCustomInput && curr) {
+    budgetCustomInput.value = Math.round(state.budgetGBP * curr.rate);
+  }
 
   const adultsEl = document.getElementById('adults-count-label');
   const childrenEl = document.getElementById('children-count-label');
@@ -506,9 +623,6 @@ function updateFilterLabels() {
 }
 
 function handleFilterChange() {
-  const originSelect = document.getElementById('origin-hub-select');
-  if (originSelect) state.originHubId = originSelect.value;
-
   const strictToggle = document.getElementById('strict-budget-toggle');
   if (strictToggle) state.strictBudget = strictToggle.checked;
 
@@ -1348,26 +1462,27 @@ function renderDirectBookingLinks(dest) {
   const cityCountryEncoded = encodeURIComponent(`${dest.city}, ${dest.country}`);
   const cityEncoded = encodeURIComponent(dest.city);
   const rooms = getHotelRoomsCount();
+  const currCode = state.currency || 'GBP';
 
   document.getElementById('booking-links-subtitle').textContent =
-    `Direct booking links for ${getTravellersLabel(false)} • ${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ${dates.checkinISO} to ${dates.checkoutISO} (${state.tripDays} Nights)`;
+    `Direct booking in ${currCode} for ${getTravellersLabel(false)} • Starting from ${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ${dates.checkinISO} to ${dates.checkoutISO} (${state.tripDays} Nights)`;
   document.getElementById('booking-flight-price-pill').textContent =
     `Est. ${formatMoney(dest.flightCostGBP)} (${getTravellersLabel(true)})`;
   document.getElementById('booking-hotel-price-pill').textContent =
     `${activeTierObj.shortLabel}: ${formatMoney(activeTierObj.hotelTotalGBP)}`;
 
-  // 1. Flight Links (Pre-filled with Adults & Children)
-  const skyscannerUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}`;
-  const googleFlightsUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights from ${origin.iata} to ${dest.iata} on ${dates.checkinISO} through ${dates.checkoutISO} for ${state.adults} adults${state.children > 0 ? ' and ' + state.children + ' children' : ''}`)}`;
+  // 1. Flight Links (Pre-filled with Starting Point, Currency, Adults & Children)
+  const skyscannerUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}&currency=${currCode}`;
+  const googleFlightsUrl = `https://www.google.com/travel/flights?curr=${currCode}&q=${encodeURIComponent(`Flights from ${origin.iata} to ${dest.iata} on ${dates.checkinISO} through ${dates.checkoutISO} for ${state.adults} adults${state.children > 0 ? ' and ' + state.children + ' children' : ''}`)}`;
   const kayakPaxPath = `${state.adults}adults${state.children > 0 ? '/children-' + Array(state.children).fill('8').join('-') : ''}`;
   const kayakFlightsUrl = `https://www.kayak.co.uk/flights/${origin.iata}-${dest.iata}/${dates.checkinISO}/${dates.checkoutISO}/${kayakPaxPath}?sort=bestflight_a`;
   const expediaFlightsUrl = `https://www.expedia.co.uk/Flights-Search?trip=roundtrip&leg1=from:${origin.city},to:${dest.city},departure:${dates.checkinISO}TANYT&leg2=from:${dest.city},to:${origin.city},departure:${dates.checkoutISO}TANYT&passengers=adults:${state.adults},children:${state.children}&mode=search`;
 
   const flightPortals = [
-    { name: 'Skyscanner', sub: `Compare airlines (${getTravellersLabel(true)})`, url: skyscannerUrl, badge: 'Popular' },
-    { name: 'Google Flights', sub: `Live fare matrix (${getTravellersLabel(true)})`, url: googleFlightsUrl, badge: 'Fast' },
-    { name: 'Kayak Flights', sub: `Flexible dates (${getTravellersLabel(true)})`, url: kayakFlightsUrl, badge: 'Deals' },
-    { name: 'Expedia Flights', sub: `Flight + bundle (${getTravellersLabel(true)})`, url: expediaFlightsUrl, badge: 'ATOL' }
+    { name: 'Skyscanner', sub: `From ${origin.iata} • ${currCode} (${getTravellersLabel(true)})`, url: skyscannerUrl, badge: 'Popular' },
+    { name: 'Google Flights', sub: `From ${origin.iata} • ${currCode} (${getTravellersLabel(true)})`, url: googleFlightsUrl, badge: 'Fast' },
+    { name: 'Kayak Flights', sub: `From ${origin.iata} (${getTravellersLabel(true)})`, url: kayakFlightsUrl, badge: 'Deals' },
+    { name: 'Expedia Flights', sub: `From ${origin.city} (${getTravellersLabel(true)})`, url: expediaFlightsUrl, badge: 'ATOL' }
   ];
 
   document.getElementById('modal-flight-links').innerHTML = flightPortals.map(p => `
@@ -1387,7 +1502,7 @@ function renderDirectBookingLinks(dest) {
     </a>
   `).join('');
 
-  // 2. Hotel & Airbnb Links (incorporating user's 5★, 4★, 3★, Airbnb preferences + Adults/Children/Rooms)
+  // 2. Hotel & Airbnb Links (incorporating user's 5★, 4★, 3★, Airbnb preferences + Currency + Adults/Children/Rooms)
   const selectedStars = state.selectedAccommodations
     .filter(id => id !== 'airbnb')
     .map(id => id.replace('star', ''));
@@ -1395,14 +1510,14 @@ function renderDirectBookingLinks(dest) {
     ? encodeURIComponent(selectedStars.map(s => `class=${s}`).join(';'))
     : encodeURIComponent('class=3;class=4;class=5');
 
-  const bookingComUrl = `https://www.booking.com/searchresults.html?ss=${cityCountryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${rooms}&nflt=${nfltParam}`;
-  const airbnbUrl = `https://www.airbnb.co.uk/s/${cityEncoded}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}`;
+  const bookingComUrl = `https://www.booking.com/searchresults.html?ss=${cityCountryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${rooms}&selected_currency=${currCode}&nflt=${nfltParam}`;
+  const airbnbUrl = `https://www.airbnb.co.uk/s/${cityEncoded}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`;
   const hotelsComUrl = `https://uk.hotels.com/Hotel-Search?destination=${cityCountryEncoded}&startDate=${dates.checkinISO}&endDate=${dates.checkoutISO}&adults=${state.adults}${state.children > 0 ? '&children=' + Array(state.children).fill('8').join(',') : ''}`;
   const expediaHotelsUrl = `https://www.expedia.co.uk/Hotel-Search?destination=${cityCountryEncoded}&startDate=${dates.checkinISO}&endDate=${dates.checkoutISO}&adults=${state.adults}${state.children > 0 ? '&children=' + Array(state.children).fill('8').join(',') : ''}`;
 
   const hotelPortals = [
-    { name: 'Booking.com', sub: `${selectedStars.length ? selectedStars.map(s => s + '★').join('/') : '3★–5★'} • ${rooms} Room(s)`, url: bookingComUrl },
-    { name: 'Airbnb Stays', sub: `Entire homes (${getTravellersLabel(true)})`, url: airbnbUrl },
+    { name: 'Booking.com', sub: `${selectedStars.length ? selectedStars.map(s => s + '★').join('/') : '3★–5★'} • ${rooms} Room(s) (${currCode})`, url: bookingComUrl },
+    { name: 'Airbnb Stays', sub: `Entire homes • ${currCode} (${getTravellersLabel(true)})`, url: airbnbUrl },
     { name: 'Hotels.com', sub: `Member rates (${getTravellersLabel(true)})`, url: hotelsComUrl },
     { name: 'Expedia Stays', sub: `5★, 4★ & resorts (${getTravellersLabel(true)})`, url: expediaHotelsUrl }
   ];

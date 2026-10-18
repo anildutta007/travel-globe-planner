@@ -10,23 +10,51 @@
  */
 
 const DEPARTURE_HUBS = [
-  { id: 'LON', name: 'London, UK (LHR / LGW)', city: 'London', country: 'United Kingdom', iata: 'LON', skyscannerCode: 'lond', lat: 51.5074, lng: -0.1278, flag: '🇬🇧' },
-  { id: 'MAN', name: 'Manchester, UK (MAN)', city: 'Manchester', country: 'United Kingdom', iata: 'MAN', skyscannerCode: 'manc', lat: 53.3537, lng: -2.2750, flag: '🇬🇧' },
-  { id: 'EDI', name: 'Edinburgh, UK (EDI)', city: 'Edinburgh', country: 'United Kingdom', iata: 'EDI', skyscannerCode: 'edin', lat: 55.9500, lng: -3.3725, flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
-  { id: 'JFK', name: 'New York, USA (JFK / EWR)', city: 'New York', country: 'United States', iata: 'NYCA', skyscannerCode: 'nyca', lat: 40.6413, lng: -73.7781, flag: '🇺🇸' },
-  { id: 'LAX', name: 'Los Angeles, USA (LAX)', city: 'Los Angeles', country: 'United States', iata: 'LAX', skyscannerCode: 'laxa', lat: 33.9416, lng: -118.4085, flag: '🇺🇸' },
-  { id: 'DXB', name: 'Dubai, UAE (DXB)', city: 'Dubai', country: 'UAE', iata: 'DXB', skyscannerCode: 'dxb', lat: 25.2532, lng: 55.3657, flag: '🇦🇪' },
-  { id: 'DEL', name: 'New Delhi, India (DEL)', city: 'New Delhi', country: 'India', iata: 'DEL', skyscannerCode: 'del', lat: 28.5562, lng: 77.1000, flag: '🇮🇳' },
-  { id: 'BOM', name: 'Mumbai, India (BOM)', city: 'Mumbai', country: 'India', iata: 'BOM', skyscannerCode: 'bom', lat: 19.0896, lng: 72.8656, flag: '🇮🇳' },
-  { id: 'SIN', name: 'Singapore (SIN)', city: 'Singapore', country: 'Singapore', iata: 'SIN', skyscannerCode: 'sin', lat: 1.3644, lng: 103.9915, flag: '🇸🇬' },
-  { id: 'SYD', name: 'Sydney, Australia (SYD)', city: 'Sydney', country: 'Australia', iata: 'SYD', skyscannerCode: 'syd', lat: -33.9399, lng: 151.1753, flag: '🇦🇺' }
+  // United Kingdom & Ireland
+  { id: 'LON', name: 'London, UK (LHR / LGW)', city: 'London', country: 'United Kingdom', region: 'UK & Ireland', iata: 'LON', skyscannerCode: 'lond', lat: 51.5074, lng: -0.1278, flag: '🇬🇧' },
+  { id: 'MAN', name: 'Manchester, UK (MAN)', city: 'Manchester', country: 'United Kingdom', region: 'UK & Ireland', iata: 'MAN', skyscannerCode: 'manc', lat: 53.3537, lng: -2.2750, flag: '🇬🇧' },
+  { id: 'BHX', name: 'Birmingham, UK (BHX)', city: 'Birmingham', country: 'United Kingdom', region: 'UK & Ireland', iata: 'BHX', skyscannerCode: 'birm', lat: 52.4539, lng: -1.7480, flag: '🇬🇧' },
+  { id: 'EDI', name: 'Edinburgh, UK (EDI)', city: 'Edinburgh', country: 'United Kingdom', region: 'UK & Ireland', iata: 'EDI', skyscannerCode: 'edin', lat: 55.9500, lng: -3.3725, flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+  { id: 'GLA', name: 'Glasgow, UK (GLA)', city: 'Glasgow', country: 'United Kingdom', region: 'UK & Ireland', iata: 'GLA', skyscannerCode: 'glas', lat: 55.8719, lng: -4.4331, flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+  { id: 'DUB', name: 'Dublin, Ireland (DUB)', city: 'Dublin', country: 'Ireland', region: 'UK & Ireland', iata: 'DUB', skyscannerCode: 'dub', lat: 53.4264, lng: -6.2499, flag: '🇮🇪' },
+  // Europe
+  { id: 'PAR', name: 'Paris, France (CDG / ORY)', city: 'Paris', country: 'France', region: 'Europe', iata: 'PAR', skyscannerCode: 'pari', lat: 49.0097, lng: 2.5479, flag: '🇫🇷' },
+  { id: 'AMS', name: 'Amsterdam, Netherlands (AMS)', city: 'Amsterdam', country: 'Netherlands', region: 'Europe', iata: 'AMS', skyscannerCode: 'ams', lat: 52.3105, lng: 4.7683, flag: '🇳🇱' },
+  { id: 'FRA', name: 'Frankfurt, Germany (FRA)', city: 'Frankfurt', country: 'Germany', region: 'Europe', iata: 'FRA', skyscannerCode: 'fran', lat: 50.0379, lng: 8.5622, flag: '🇩🇪' },
+  { id: 'MAD', name: 'Madrid, Spain (MAD)', city: 'Madrid', country: 'Spain', region: 'Europe', iata: 'MAD', skyscannerCode: 'madr', lat: 40.4983, lng: -3.5676, flag: '🇪🇸' },
+  { id: 'FCO', name: 'Rome, Italy (FCO)', city: 'Rome', country: 'Italy', region: 'Europe', iata: 'ROM', skyscannerCode: 'rome', lat: 41.8003, lng: 12.2389, flag: '🇮🇹' },
+  { id: 'ZRH', name: 'Zurich, Switzerland (ZRH)', city: 'Zurich', country: 'Switzerland', region: 'Europe', iata: 'ZRH', skyscannerCode: 'zuri', lat: 47.4582, lng: 8.5555, flag: '🇨🇭' },
+  // North America
+  { id: 'JFK', name: 'New York, USA (JFK / EWR)', city: 'New York', country: 'United States', region: 'North America', iata: 'NYCA', skyscannerCode: 'nyca', lat: 40.6413, lng: -73.7781, flag: '🇺🇸' },
+  { id: 'LAX', name: 'Los Angeles, USA (LAX)', city: 'Los Angeles', country: 'United States', region: 'North America', iata: 'LAX', skyscannerCode: 'laxa', lat: 33.9416, lng: -118.4085, flag: '🇺🇸' },
+  { id: 'ORD', name: 'Chicago, USA (ORD)', city: 'Chicago', country: 'United States', region: 'North America', iata: 'CHIC', skyscannerCode: 'chic', lat: 41.9742, lng: -87.9073, flag: '🇺🇸' },
+  { id: 'SFO', name: 'San Francisco, USA (SFO)', city: 'San Francisco', country: 'United States', region: 'North America', iata: 'SFO', skyscannerCode: 'sfo', lat: 37.6213, lng: -122.3790, flag: '🇺🇸' },
+  { id: 'MIA', name: 'Miami, USA (MIA)', city: 'Miami', country: 'United States', region: 'North America', iata: 'MIA', skyscannerCode: 'miam', lat: 25.7959, lng: -80.2870, flag: '🇺🇸' },
+  { id: 'YYZ', name: 'Toronto, Canada (YYZ)', city: 'Toronto', country: 'Canada', region: 'North America', iata: 'YTOA', skyscannerCode: 'yto', lat: 43.6777, lng: -79.6248, flag: '🇨🇦' },
+  // India & Middle East
+  { id: 'DEL', name: 'New Delhi, India (DEL)', city: 'New Delhi', country: 'India', region: 'India & Middle East', iata: 'DEL', skyscannerCode: 'del', lat: 28.5562, lng: 77.1000, flag: '🇮🇳' },
+  { id: 'BOM', name: 'Mumbai, India (BOM)', city: 'Mumbai', country: 'India', region: 'India & Middle East', iata: 'BOM', skyscannerCode: 'bom', lat: 19.0896, lng: 72.8656, flag: '🇮🇳' },
+  { id: 'BLR', name: 'Bengaluru, India (BLR)', city: 'Bengaluru', country: 'India', region: 'India & Middle East', iata: 'BLR', skyscannerCode: 'blr', lat: 13.1986, lng: 77.7066, flag: '🇮🇳' },
+  { id: 'DXB', name: 'Dubai, UAE (DXB)', city: 'Dubai', country: 'UAE', region: 'India & Middle East', iata: 'DXB', skyscannerCode: 'dxb', lat: 25.2532, lng: 55.3657, flag: '🇦🇪' },
+  { id: 'DOH', name: 'Doha, Qatar (DOH)', city: 'Doha', country: 'Qatar', region: 'India & Middle East', iata: 'DOH', skyscannerCode: 'doh', lat: 25.2731, lng: 51.6081, flag: '🇶🇦' },
+  // Asia-Pacific
+  { id: 'SIN', name: 'Singapore (SIN)', city: 'Singapore', country: 'Singapore', region: 'Asia-Pacific', iata: 'SIN', skyscannerCode: 'sin', lat: 1.3644, lng: 103.9915, flag: '🇸🇬' },
+  { id: 'HND', name: 'Tokyo, Japan (HND / NRT)', city: 'Tokyo', country: 'Japan', region: 'Asia-Pacific', iata: 'TYOA', skyscannerCode: 'tyoa', lat: 35.5494, lng: 139.7798, flag: '🇯🇵' },
+  { id: 'SYD', name: 'Sydney, Australia (SYD)', city: 'Sydney', country: 'Australia', region: 'Asia-Pacific', iata: 'SYD', skyscannerCode: 'syd', lat: -33.9399, lng: 151.1753, flag: '🇦🇺' },
+  { id: 'MEL', name: 'Melbourne, Australia (MEL)', city: 'Melbourne', country: 'Australia', region: 'Asia-Pacific', iata: 'MEL', skyscannerCode: 'mel', lat: -37.6690, lng: 144.8410, flag: '🇦🇺' }
 ];
 
 const CURRENCIES = {
-  GBP: { symbol: '£', code: 'GBP', rate: 1.0, name: 'British Pound (£)' },
-  USD: { symbol: '$', code: 'USD', rate: 1.28, name: 'US Dollar ($)' },
-  EUR: { symbol: '€', code: 'EUR', rate: 1.18, name: 'Euro (€)' },
-  INR: { symbol: '₹', code: 'INR', rate: 107.5, name: 'Indian Rupee (₹)' }
+  GBP: { symbol: '£', code: 'GBP', rate: 1.0, name: 'British Pound (£ GBP)', flag: '🇬🇧' },
+  USD: { symbol: '$', code: 'USD', rate: 1.28, name: 'US Dollar ($ USD)', flag: '🇺🇸' },
+  EUR: { symbol: '€', code: 'EUR', rate: 1.18, name: 'Euro (€ EUR)', flag: '🇪🇺' },
+  INR: { symbol: '₹', code: 'INR', rate: 107.5, name: 'Indian Rupee (₹ INR)', flag: '🇮🇳' },
+  AED: { symbol: 'AED ', code: 'AED', rate: 4.70, name: 'UAE Dirham (AED)', flag: '🇦🇪' },
+  AUD: { symbol: 'A$', code: 'AUD', rate: 1.96, name: 'Australian Dollar (A$ AUD)', flag: '🇦🇺' },
+  CAD: { symbol: 'C$', code: 'CAD', rate: 1.77, name: 'Canadian Dollar (C$ CAD)', flag: '🇨🇦' },
+  SGD: { symbol: 'S$', code: 'SGD', rate: 1.71, name: 'Singapore Dollar (S$ SGD)', flag: '🇸🇬' },
+  CHF: { symbol: 'CHF ', code: 'CHF', rate: 1.12, name: 'Swiss Franc (CHF)', flag: '🇨🇭' },
+  JPY: { symbol: '¥', code: 'JPY', rate: 194.0, name: 'Japanese Yen (¥ JPY)', flag: '🇯🇵' }
 };
 
 const MONTHS_META = [
