@@ -340,12 +340,19 @@ function evaluateDestination(dest) {
   const maxSelectedTotalGBP = selectedTierObjs[selectedTierObjs.length - 1].combinedTotalGBP;
 
   // Check filter matches
+  const searchQuery = ((document.getElementById('dest-search-input') || {}).value || '').trim().toLowerCase();
+  const matchesSearch = !searchQuery ||
+    dest.city.toLowerCase().includes(searchQuery) ||
+    dest.country.toLowerCase().includes(searchQuery) ||
+    dest.continent.toLowerCase().includes(searchQuery) ||
+    dest.vibeTags.some(t => t.toLowerCase().includes(searchQuery));
+
   const matchesTemp = tempC >= state.minTempC && tempC <= state.maxTempC;
   const matchesSeason = state.seasonFilter === 'both' || state.seasonFilter === seasonType;
   const matchesBudget = fittingTiers.length > 0;
 
-  // A location lights up if it matches Temp + Season, and either fits budget or strictBudget is unchecked
-  const isLitUp = matchesTemp && matchesSeason && (state.strictBudget ? matchesBudget : true);
+  // A location lights up if it matches Search + Temp + Season, and either fits budget or strictBudget is unchecked
+  const isLitUp = matchesSearch && matchesTemp && matchesSeason && (state.strictBudget ? matchesBudget : true);
 
   return {
     ...dest,
@@ -367,6 +374,7 @@ function evaluateDestination(dest) {
     primaryTier,
     minSelectedTotalGBP,
     maxSelectedTotalGBP,
+    matchesSearch,
     matchesTemp,
     matchesSeason,
     matchesBudget,
@@ -791,7 +799,7 @@ function updateGlobeVisualization() {
     lng: origin.lng
   };
 
-  const points = [originMarker, ...litDestinations];
+  const points = [originMarker, ...litDestinations].map(p => ({ ...p }));
   const arcs = litDestinations.map(d => ({
     startLat: origin.lat,
     startLng: origin.lng,
@@ -802,11 +810,27 @@ function updateGlobeVisualization() {
       : ['rgba(56, 189, 248, 0.55)', 'rgba(245, 158, 11, 0.85)']
   }));
 
+  // Important: Flush Globe.gl's D3 HTML element cache & remove stale DOM nodes first
+  // so every pin is freshly recreated with the current matching locations and selected currency
+  globeInstance.htmlElementsData([]);
+  const stalePins = document.querySelectorAll('#globe-viz .globe-pin-wrapper');
+  stalePins.forEach(el => el.remove());
+
   globeInstance
     .pointsData(points)
     .ringsData(litDestinations)
     .arcsData(arcs)
     .htmlElementsData(points);
+
+  // If the user's filter narrows results down to 1–6 locations (and modal isn't open),
+  // smoothly rotate the globe camera toward the matching location(s)
+  if (litDestinations.length >= 1 && litDestinations.length <= 6 && !document.body.classList.contains('modal-open')) {
+    const focusTarget = litDestinations[0];
+    globeInstance.pointOfView(
+      { lat: focusTarget.lat, lng: focusTarget.lng, altitude: litDestinations.length === 1 ? 1.55 : 1.95 },
+      900
+    );
+  }
 }
 
 function toggleGlobeRotation() {
