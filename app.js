@@ -28,24 +28,35 @@ const GLOBE_TEXTURES = [
     name: 'Night Earth',
     globeUrl: 'https://unpkg.com/three-globe/example/img/earth-night.jpg',
     bumpUrl: 'https://unpkg.com/three-globe/example/img/earth-topology.png',
-    atmosphereColor: '#38bdf8'
+    atmosphereColor: '#38bdf8',
+    tile2dUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    tile2dLabelsUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+    tile2dAttribution: '&copy; Esri, HERE, Garmin, OpenStreetMap'
   },
   {
     name: 'Blue Marble',
     globeUrl: 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
     bumpUrl: 'https://unpkg.com/three-globe/example/img/earth-topology.png',
-    atmosphereColor: '#60a5fa'
+    atmosphereColor: '#60a5fa',
+    tile2dUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    tile2dLabelsUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    tile2dAttribution: '&copy; Esri, Maxar, Earthstar Geographics'
   },
   {
-    name: 'Dark Vector',
+    name: 'Street / Vector',
     globeUrl: 'https://unpkg.com/three-globe/example/img/earth-dark.jpg',
     bumpUrl: 'https://unpkg.com/three-globe/example/img/earth-topology.png',
-    atmosphereColor: '#10b981'
+    atmosphereColor: '#10b981',
+    tile2dUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    tile2dLabelsUrl: null,
+    tile2dAttribution: '&copy; OpenStreetMap contributors'
   }
 ];
 
 let globeInstance = null;
 let leafletMap = null;
+let leafletBaseTileLayer = null;
+let leafletLabelTileLayer = null;
 let leafletMarkersLayer = null;
 let computedDestinations = [];
 
@@ -642,6 +653,9 @@ function cycleGlobeTexture() {
       .globeImageUrl(tex.globeUrl)
       .atmosphereColor(tex.atmosphereColor);
   }
+  if (leafletMap) {
+    apply2DTileLayer(state.globeTextureIndex);
+  }
 }
 
 function focusGlobeRegion(region) {
@@ -674,7 +688,7 @@ function handleViewportResize() {
 }
 
 // ============================================================================
-// 2D WORLD MAP TOGGLE (LEAFLET.JS)
+// 2D WORLD MAP TOGGLE (LEAFLET.JS — 100% FREE, ZERO-API-KEY TILES)
 // ============================================================================
 function setMapMode(mode) {
   state.mapMode = mode;
@@ -689,7 +703,10 @@ function setMapMode(mode) {
     btn2d.className = 'px-2.5 py-1 rounded-md text-xs font-bold bg-cyan-600 text-white shadow flex items-center gap-1 transition';
     btn3d.className = 'px-2.5 py-1 rounded-md text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1 transition';
     init2DMap();
-    update2DMapVisualization();
+    setTimeout(() => {
+      if (leafletMap) leafletMap.invalidateSize();
+      update2DMapVisualization();
+    }, 60);
   } else {
     mapDiv.classList.add('hidden');
     globeDiv.classList.remove('hidden');
@@ -699,21 +716,43 @@ function setMapMode(mode) {
   }
 }
 
+function apply2DTileLayer(texIdx) {
+  if (!leafletMap) return;
+  const tex = GLOBE_TEXTURES[texIdx] || GLOBE_TEXTURES[0];
+
+  if (leafletBaseTileLayer) {
+    leafletMap.removeLayer(leafletBaseTileLayer);
+    leafletBaseTileLayer = null;
+  }
+  if (leafletLabelTileLayer) {
+    leafletMap.removeLayer(leafletLabelTileLayer);
+    leafletLabelTileLayer = null;
+  }
+
+  leafletBaseTileLayer = L.tileLayer(tex.tile2dUrl, {
+    attribution: tex.tile2dAttribution,
+    maxZoom: 18
+  }).addTo(leafletMap);
+
+  if (tex.tile2dLabelsUrl) {
+    leafletLabelTileLayer = L.tileLayer(tex.tile2dLabelsUrl, {
+      maxZoom: 18,
+      pane: 'overlayPane'
+    }).addTo(leafletMap);
+  }
+}
+
 function init2DMap() {
   if (leafletMap || typeof L === 'undefined') return;
   leafletMap = L.map('leaflet-map', {
     center: [24, 12],
     zoom: 2.4,
     minZoom: 2,
+    maxZoom: 18,
     worldCopyJump: true
   });
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
-    maxZoom: 18
-  }).addTo(leafletMap);
-
+  apply2DTileLayer(state.globeTextureIndex);
   leafletMarkersLayer = L.layerGroup().addTo(leafletMap);
 }
 
