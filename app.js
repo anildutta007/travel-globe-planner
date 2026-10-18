@@ -565,17 +565,23 @@ function createGlobePinElement(d) {
   wrapper.innerHTML = `
     <div class="globe-pin-card ${isSelected ? 'pin-selected' : ''} ${!d.matchesBudget ? 'pin-over-budget' : ''}">
       <div class="flex items-center justify-between gap-2 text-[11px] font-extrabold leading-tight">
-        <span class="truncate">${d.flag} ${d.city}</span>
+        <span class="truncate max-w-[125px]">${d.flag} ${d.city.split('(')[0].split('&')[0].trim()}</span>
         <span class="font-mono text-amber-300">${formatTemp(d.tempC)}</span>
       </div>
-      <div class="flex items-center justify-between gap-1.5 text-[10px] font-mono text-slate-300 leading-tight">
-        <span>✈️ ${formatMoney(d.flightCostGBP)}</span>
-        <span>+</span>
-        <span>🏨 ${formatMoney(tier.hotelTotalGBP)}</span>
+      <div class="flex items-center justify-between gap-1.5 text-[10px] font-mono leading-tight">
+        <span class="text-slate-400">${tier.shortLabel}</span>
+        <span class="font-extrabold ${d.matchesBudget ? 'text-emerald-400' : 'text-amber-400'}">${formatMoney(tier.combinedTotalGBP)}</span>
       </div>
-      <div class="flex items-center justify-between gap-1 pt-0.5 border-t border-slate-700/70 text-[10px] leading-tight">
-        <span class="font-bold ${seasonBadgeColor}">${seasonLabel} • ${tier.shortLabel}</span>
-        <span class="font-mono font-extrabold ${d.matchesBudget ? 'text-emerald-400' : 'text-amber-400'}">${formatMoney(tier.combinedTotalGBP)}</span>
+      <div class="globe-pin-details flex-col gap-1 pt-1 mt-0.5 border-t border-slate-700/70">
+        <div class="flex items-center justify-between gap-1.5 text-[10px] font-mono text-slate-200 leading-tight">
+          <span>✈️ ${formatMoney(d.flightCostGBP)}</span>
+          <span>+</span>
+          <span>🏨 ${formatMoney(tier.hotelTotalGBP)}</span>
+        </div>
+        <div class="flex items-center justify-between gap-1 text-[9px] leading-tight">
+          <span class="font-bold ${seasonBadgeColor}">${seasonLabel}</span>
+          <span class="text-cyan-300">Click for Itinerary →</span>
+        </div>
       </div>
     </div>
     <div class="globe-pin-stem"></div>
@@ -962,6 +968,9 @@ function openDestinationModal(destId) {
   state.activeModalTier = dest.primaryTier.tierId;
   state.itineraryVisible = false;
 
+  // Hide background globe/map floating HTML pins while modal is open
+  document.body.classList.add('modal-open');
+
   // Smoothly fly the 3D Globe or 2D Map camera to the clicked location
   if (state.mapMode === '3d' && globeInstance) {
     if (globeInstance.controls()) globeInstance.controls().autoRotate = false;
@@ -982,6 +991,7 @@ function openDestinationModal(destId) {
 function closeDestinationModal() {
   const modal = document.getElementById('destination-modal');
   if (modal) modal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
   if (globeInstance && globeInstance.controls() && state.autoRotate) {
     globeInstance.controls().autoRotate = true;
   }
