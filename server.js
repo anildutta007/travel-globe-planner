@@ -1,5 +1,6 @@
 /**
- * AeroGlobe AI - Interactive 3D Travel Globe, Cost Estimator & Itinerary Planner
+ * Dutta Travel Planner - Interactive 3D World Globe, Cost Estimator & Itinerary Planner
+ * Developed by Anil Dutta (Anildutta007@gmail.com)
  * Node.js HTTP Server (Port 8098)
  */
 
@@ -28,7 +29,13 @@ const server = http.createServer((req, res) => {
   const pathname = parsedUrl.pathname;
 
   if (pathname === '/api/health') {
-    const payload = JSON.stringify({ status: 'ok', service: 'AeroGlobe AI Travel Planner', port: PORT });
+    const payload = JSON.stringify({
+      status: 'ok',
+      service: 'Dutta Travel Planner',
+      developer: 'Anil Dutta',
+      email: 'Anildutta007@gmail.com',
+      port: PORT
+    });
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     return res.end(payload);
   }
@@ -58,7 +65,8 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, HOST, () => {
   const url = `http://${HOST}:${PORT}`;
   console.log('======================================================================');
-  console.log('  AeroGlobe AI - Interactive 3D Travel Globe & Itinerary Planner');
+  console.log('  Dutta Travel Planner - Interactive 3D World Globe & AI Planner');
+  console.log('  Developer: Anil Dutta (Anildutta007@gmail.com)');
   console.log(`  Server running at: ${url}`);
   console.log('======================================================================');
   if (!process.argv.includes('--no-browser')) {

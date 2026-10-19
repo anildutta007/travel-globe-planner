@@ -1,5 +1,6 @@
 """
-AeroGlobe AI - Interactive 3D Travel Globe, Cost Estimator & Itinerary Planner
+Dutta Travel Planner - Interactive 3D World Globe, Cost Estimator & Itinerary Planner
+Developed by Anil Dutta (Anildutta007@gmail.com)
 Local Web & API Server (Port 8098)
 """
 
@@ -54,7 +55,9 @@ class TravelGlobeHandler(BaseHTTPRequestHandler):
         if path == "/api/health":
             return self._send_json({
                 "status": "ok",
-                "service": "AeroGlobe AI Travel Planner",
+                "service": "Dutta Travel Planner",
+                "developer": "Anil Dutta",
+                "email": "Anildutta007@gmail.com",
                 "port": PORT
             })
 
@@ -91,7 +94,8 @@ def main():
     url = f"http://{HOST}:{PORT}"
     server = HTTPServer((HOST, PORT), TravelGlobeHandler)
     print("======================================================================")
-    print("  AeroGlobe AI - Interactive 3D Travel Globe & Itinerary Planner")
+    print("  Dutta Travel Planner - Interactive 3D World Globe & AI Planner")
+    print("  Developer: Anil Dutta (Anildutta007@gmail.com)")
     print(f"  Server running at: {url}")
     print("======================================================================")
     if "--no-browser" not in sys.argv:

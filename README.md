@@ -1,12 +1,17 @@
-# 🌍 AeroGlobe AI — Interactive 3D Travel Globe, Cost Estimator & Itinerary Planner
+# 🌍 Dutta Travel Planner — Interactive 3D World Globe, Cost Estimator & Itinerary Planner
+
+**Developer**: Anil Dutta ([Anildutta007@gmail.com](mailto:Anildutta007@gmail.com))
 
 An interactive 3D World Globe travel discovery & planning application where users filter destinations by:
-1. **Desired Weather (Temperature Range)** in `°C` or `°F` (plus 1-click presets: *Tropical*, *Warm*, *Mild*, *Alpine*)
-2. **Month of Travel** (`January` – `December`) with historical average daytime temperatures, daily sunshine hours, and seasonal pricing
-3. **Number of Days for Travel** (`2` – `28` days)
-4. **Expected Total Budget (Return Flight + Hotel)** across `£ GBP`, `$ USD`, `€ EUR`, and `₹ INR`
-5. **Seasonality Preference**: **Off-Peak**, **On-Peak**, or **Both**
-6. **Hotel Accommodation Preference**: Multi-select checkboxes for **5-Star Luxury**, **4-Star Boutique**, **3-Star Comfort**, and **Airbnb / Vacation Rental** (users can select any combination or all 4)
+1. **Starting Point of Holiday (Fly From)**: 25 global airport hubs across UK, Europe, North America, India & Middle East, and Asia-Pacific
+2. **Holiday Payment Currency**: 10 major world currencies (`£ GBP`, `$ USD`, `€ EUR`, `₹ INR`, `AED`, `A$ AUD`, `C$ CAD`, `S$ SGD`, `CHF`, `¥ JPY`)
+3. **Desired Weather (Temperature Range)** in `°C` or `°F` (plus 1-click presets: *Tropical*, *Warm*, *Mild*, *Alpine*)
+4. **Month of Travel** (`January` – `December`) with historical average daytime temperatures, daily sunshine hours, and seasonal pricing
+5. **Number of Travel Days** (`2` – `28` days)
+6. **Number of Travellers**: Adults (12+ yrs) and Children (2–11 yrs with 25% child airfare discount)
+7. **Expected Total Budget (Return Flight + Hotel)** for the entire party with direct currency entry and strict budget filtering
+8. **Seasonality Preference**: **Off-Peak**, **On-Peak**, or **Both**
+9. **Hotel Accommodation Preference**: Multi-select checkboxes for **5-Star Luxury**, **4-Star Boutique**, **3-Star Comfort**, and **Airbnb / Vacation Rental** (users can select any combination or all 4)
 
 ---
 

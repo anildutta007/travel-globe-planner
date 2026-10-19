@@ -1,5 +1,6 @@
 /**
- * AeroGlobe AI — Interactive 3D Travel Globe, Cost Estimator & Itinerary Planner
+ * Dutta Travel Planner — Interactive 3D World Globe, Cost Estimator & Itinerary Planner
+ * Developed by Anil Dutta (Anildutta007@gmail.com)
  * Core Client-Side Engine
  */
 
