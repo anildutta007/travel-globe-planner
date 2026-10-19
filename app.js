@@ -1593,13 +1593,21 @@ function renderDestinationModalContent(dest) {
   if (basisPanel) {
     const activeTier = dest.tierBreakdowns[state.activeModalTier] || dest.primaryTier;
     const dates = getSampleTravelDates();
-    const currCode = state.currency || 'GBP';
     const primaryHotelName = (activeTier.exampleProperty || dest.city).split('/')[0].trim();
-    const hotelQueryEncoded = encodeURIComponent(`${primaryHotelName} ${dest.city} ${dest.country}`);
-    const specificHotelBookingUrl = activeTier.tierId === 'airbnb'
+    const hotelCleanQuery = `${primaryHotelName}, ${dest.city}`;
+    const hotelQueryEncoded = encodeURIComponent(hotelCleanQuery);
+
+    // Google Travel Hotels direct property query (lands directly on the hotel listing card & rate comparison)
+    const googleHotelDirectUrl = `https://www.google.com/travel/search?q=${encodeURIComponent(`${primaryHotelName} hotel in ${dest.city} ${dest.country}`)}&curr=${currCode}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}`;
+
+    // Booking.com direct hotel search URL
+    const bookingHotelUrl = activeTier.tierId === 'airbnb'
       ? `https://www.airbnb.co.uk/s/${encodeURIComponent(dest.city)}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`
       : `https://www.booking.com/searchresults.html?ss=${hotelQueryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${activeTier.roomsNeeded}&selected_currency=${currCode}`;
-    const googleHotelsUrl = `https://www.google.com/travel/search?q=${hotelQueryEncoded}&curr=${currCode}`;
+
+    // Specific hotel booking link defaults to Google Hotels direct link (which reliably finds the exact property and its rates across Booking.com, Agoda, Expedia, and Official site)
+    const specificHotelBookingUrl = activeTier.tierId === 'airbnb' ? bookingHotelUrl : googleHotelDirectUrl;
+    const secondaryHotelUrl = activeTier.tierId === 'airbnb' ? `https://www.google.com/travel/search?q=${encodeURIComponent(`Airbnb vacation rentals ${dest.city}`)}&curr=${currCode}` : bookingHotelUrl;
     const skyscannerFlightUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}&currency=${currCode}`;
 
     const hotelSeasonText = dest.isOnPeak
@@ -1669,19 +1677,22 @@ function renderDestinationModalContent(dest) {
               href="${specificHotelBookingUrl}"
               target="_blank"
               rel="noopener noreferrer"
-              class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
+              class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
+              title="Open direct property listing and live nightly rates for ${primaryHotelName}"
             >
+              <i data-lucide="building" class="w-3 h-3 text-amber-400"></i>
               <span>View "${primaryHotelName}" Rates</span>
               <i data-lucide="external-link" class="w-3 h-3"></i>
             </a>
             <a
-              href="${googleHotelsUrl}"
+              href="${secondaryHotelUrl}"
               target="_blank"
               rel="noopener noreferrer"
               class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
+              title="Compare all available rooms & deals across Booking.com / Stays"
             >
-              <span>Google Hotels</span>
-              <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+              <span>Booking.com</span>
+              <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-400"></i>
             </a>
           </div>
         </div>
@@ -1907,14 +1918,31 @@ function copyItineraryText() {
 // ============================================================================
 function getSampleTravelDates() {
   const now = new Date();
-  let year = now.getFullYear();
-  if (state.monthIndex < now.getMonth()) {
-    year += 1;
-  }
-  const checkinDate = new Date(year, state.monthIndex, 10);
-  const checkoutDate = new Date(year, state.monthIndex, 10 + state.tripDays);
+  let checkinDate, checkoutDate;
 
-  const fmtISO = (d) => d.toISOString().split('T')[0];
+  if (state.startDate && state.endDate) {
+    checkinDate = new Date(state.startDate);
+    checkoutDate = new Date(state.endDate);
+  } else if (state.startDate) {
+    checkinDate = new Date(state.startDate);
+    checkoutDate = new Date(checkinDate);
+    checkoutDate.setDate(checkinDate.getDate() + (state.tripDays || 7));
+  } else {
+    let year = now.getFullYear();
+    if (state.monthIndex < now.getMonth()) {
+      year += 1;
+    }
+    checkinDate = new Date(year, state.monthIndex, 10);
+    checkoutDate = new Date(year, state.monthIndex, 10 + (state.tripDays || 7));
+  }
+
+  const fmtISO = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const fmtSky = (d) => {
     const yy = String(d.getFullYear()).slice(2);
     const mm = String(d.getMonth() + 1).padStart(2, '0');
