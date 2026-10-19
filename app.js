@@ -759,13 +759,13 @@ function initVisitorCounter() {
       return res.json();
     })
     .then(data => {
-      const visits = data.totalVisits || data.uniqueVisitors || 1428;
+      const visits = data.totalVisits || data.uniqueVisitors || 1;
       badgeEl.textContent = visits.toLocaleString();
     })
     .catch(() => {
       // Local fallback simulation with persistent localStorage
       const localKey = 'dutta_local_visitor_count';
-      let count = parseInt(localStorage.getItem(localKey) || '1428', 10);
+      let count = parseInt(localStorage.getItem(localKey) || '1', 10);
       count += 1;
       try {
         localStorage.setItem(localKey, String(count));

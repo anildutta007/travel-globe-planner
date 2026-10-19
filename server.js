@@ -42,7 +42,7 @@ const server = http.createServer((req, res) => {
 
   if (pathname === '/api/visitors') {
     const counterFile = path.join(BASE_DIR, 'visitors.json');
-    let data = { totalVisits: 1420, uniqueVisitors: 840, lastUpdated: new Date().toISOString() };
+    let data = { totalVisits: 1, uniqueVisitors: 1, lastUpdated: new Date().toISOString() };
     try {
       if (fs.existsSync(counterFile)) {
         data = JSON.parse(fs.readFileSync(counterFile, 'utf8'));

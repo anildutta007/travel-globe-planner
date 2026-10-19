@@ -63,7 +63,7 @@ class TravelGlobeHandler(BaseHTTPRequestHandler):
 
         if path == "/api/visitors":
             counter_file = os.path.join(BASE_DIR, "visitors.json")
-            data = {"totalVisits": 1420, "uniqueVisitors": 840}
+            data = {"totalVisits": 1, "uniqueVisitors": 1}
             if os.path.exists(counter_file):
                 try:
                     with open(counter_file, "r", encoding="utf-8") as f:
