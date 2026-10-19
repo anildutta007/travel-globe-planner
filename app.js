@@ -446,10 +446,8 @@ function formatDateISO(date) {
 
 function initDefaultDates() {
   const today = new Date();
-  // Target a default departure within the currently selected month
   const targetYear = today.getFullYear();
   const start = new Date(targetYear, state.monthIndex, 10);
-  // If target date in the past for this year, shift to next year
   if (start < today && state.monthIndex < today.getMonth()) {
     start.setFullYear(targetYear + 1);
   }
@@ -460,98 +458,59 @@ function initDefaultDates() {
   state.endDate = formatDateISO(end);
 
   const startInput = document.getElementById('trip-start-date');
-  const endInput = document.getElementById('trip-end-date');
   if (startInput) startInput.value = state.startDate;
-  if (endInput) endInput.value = state.endDate;
 }
 
-function handleDateRangeChange(changedSource) {
-  const startInput = document.getElementById('trip-start-date');
-  const endInput = document.getElementById('trip-end-date');
-  if (!startInput || !endInput) return;
-
-  let startVal = startInput.value;
-  let endVal = endInput.value;
-
-  if (!startVal) {
+function handleStartDateChange(dateVal) {
+  if (!dateVal) {
     const today = new Date();
-    startVal = formatDateISO(today);
-    startInput.value = startVal;
+    dateVal = formatDateISO(today);
   }
 
-  let startDate = new Date(startVal);
-  let endDate = endVal ? new Date(endVal) : null;
+  const startDate = new Date(dateVal);
+  if (isNaN(startDate.getTime())) return;
 
-  // Validate end date is after start date
-  if (!endDate || isNaN(endDate.getTime()) || endDate <= startDate) {
-    endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + (state.tripDays || 7));
-    endVal = formatDateISO(endDate);
-    endInput.value = endVal;
-  }
+  state.startDate = dateVal;
+  state.monthIndex = startDate.getMonth(); // Automatically set travel month (0-11)
 
-  // Calculate day difference
-  const diffMs = endDate.getTime() - startDate.getTime();
-  const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-  const cappedDays = Math.max(2, Math.min(28, diffDays));
+  // Compute End Date based on current state.tripDays
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + (state.tripDays || 7));
+  state.endDate = formatDateISO(endDate);
 
-  state.startDate = startVal;
-  state.endDate = endVal;
-  state.tripDays = cappedDays;
-  state.monthIndex = startDate.getMonth(); // 0 - 11
-
-  // Keep slider and month grid synced
-  const slider = document.getElementById('trip-days-slider');
-  if (slider) slider.value = cappedDays;
+  const startInput = document.getElementById('trip-start-date');
+  if (startInput) startInput.value = state.startDate;
 
   initMonthGrid();
   handleFilterChange();
 }
 
-function setQuickDates(preset) {
+function setQuickStartDate(preset) {
   const today = new Date();
   let start = new Date(today);
-  let days = state.tripDays || 7;
 
-  if (preset === 'this-month') {
-    start = new Date(today.getFullYear(), today.getMonth(), Math.min(today.getDate() + 3, 20));
-    days = 7;
-  } else if (preset === 'next-month') {
-    start = new Date(today.getFullYear(), today.getMonth() + 1, 10);
-    days = 7;
-  } else if (preset === 'next-summer') {
-    const summerYear = today.getMonth() > 7 ? today.getFullYear() + 1 : today.getFullYear();
-    start = new Date(summerYear, 6, 12); // July 12
-    days = 10;
-  } else if (preset === 'next-winter') {
-    const winterYear = today.getMonth() > 11 ? today.getFullYear() + 1 : today.getFullYear();
-    start = new Date(winterYear, 11, 20); // Dec 20
-    days = 7;
+  if (preset === 'today') {
+    start = new Date(today);
+  } else if (preset === 'next-weekend') {
+    // Next Saturday
+    const day = today.getDay();
+    const daysUntilSat = (6 - day + 7) % 7 || 7;
+    start.setDate(today.getDate() + daysUntilSat);
+  } else if (preset === 'first-of-month') {
+    // 1st of the currently selected month
+    let year = today.getFullYear();
+    if (state.monthIndex < today.getMonth()) {
+      year += 1;
+    }
+    start = new Date(year, state.monthIndex, 1);
   }
 
-  const end = new Date(start);
-  end.setDate(start.getDate() + days);
-
-  state.startDate = formatDateISO(start);
-  state.endDate = formatDateISO(end);
-  state.tripDays = days;
-  state.monthIndex = start.getMonth();
-
-  const startInput = document.getElementById('trip-start-date');
-  const endInput = document.getElementById('trip-end-date');
-  if (startInput) startInput.value = state.startDate;
-  if (endInput) endInput.value = state.endDate;
-
-  const slider = document.getElementById('trip-days-slider');
-  if (slider) slider.value = days;
-
-  initMonthGrid();
-  handleFilterChange();
+  handleStartDateChange(formatDateISO(start));
 }
 
 function selectMonth(index) {
   state.monthIndex = index;
-  // Automatically adjust start and end date to fall within chosen month
+  // Automatically adjust start date to fall within chosen month
   const today = new Date();
   let year = today.getFullYear();
   if (index < today.getMonth()) {
@@ -565,9 +524,7 @@ function selectMonth(index) {
   state.endDate = formatDateISO(end);
 
   const startInput = document.getElementById('trip-start-date');
-  const endInput = document.getElementById('trip-end-date');
   if (startInput) startInput.value = state.startDate;
-  if (endInput) endInput.value = state.endDate;
 
   initMonthGrid();
   handleFilterChange();
@@ -816,8 +773,8 @@ function updateFilterLabels() {
 
   const dateRangeBadge = document.getElementById('date-range-summary-badge');
   if (dateRangeBadge) {
-    if (state.startDate && state.endDate) {
-      dateRangeBadge.textContent = `${state.tripDays} Days (${state.startDate.slice(5)} to ${state.endDate.slice(5)})`;
+    if (state.endDate) {
+      dateRangeBadge.textContent = `Returns: ${state.endDate}`;
     } else {
       dateRangeBadge.textContent = `${state.tripDays} Days`;
     }

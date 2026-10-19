@@ -268,90 +268,75 @@
           </div>
         </section>
 
-        <!-- 3. TRAVEL DATES & MONTH SELECTOR -->
-        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
+        <!-- 3. MONTH OF TRAVEL -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-white flex items-center gap-1.5">
               <i data-lucide="calendar-days" class="w-4 h-4 text-cyan-400"></i>
-              <span>3. Travel Dates &amp; Month</span>
+              <span>3. Month of Travel</span>
             </label>
             <span id="selected-month-label" class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded border border-cyan-500/30">October</span>
           </div>
 
-          <!-- Specific Start & End Date Pickers -->
-          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 space-y-2">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="text-slate-300 font-semibold flex items-center gap-1">
-                <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span>Choose Travel Dates:</span>
-              </span>
-              <span id="date-range-summary-badge" class="font-mono text-[10px] font-bold text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.5 rounded">
-                7 Days
-              </span>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label for="trip-start-date" class="block text-[10px] font-semibold text-slate-400 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  id="trip-start-date"
-                  onchange="handleDateRangeChange('start')"
-                  class="w-full bg-slate-950 border border-slate-700 hover:border-cyan-500/50 rounded-md px-2 py-1.5 text-xs font-mono font-semibold text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
-                />
-              </div>
-              <div>
-                <label for="trip-end-date" class="block text-[10px] font-semibold text-slate-400 mb-1">End Date</label>
-                <input
-                  type="date"
-                  id="trip-end-date"
-                  onchange="handleDateRangeChange('end')"
-                  class="w-full bg-slate-950 border border-slate-700 hover:border-cyan-500/50 rounded-md px-2 py-1.5 text-xs font-mono font-semibold text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
-                />
-              </div>
-            </div>
-            <!-- Quick Date Shortcuts -->
-            <div class="flex items-center justify-between gap-1 pt-0.5">
-              <button type="button" onclick="setQuickDates('this-month')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">This Month</button>
-              <button type="button" onclick="setQuickDates('next-month')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Next Month</button>
-              <button type="button" onclick="setQuickDates('next-summer')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Summer</button>
-              <button type="button" onclick="setQuickDates('next-winter')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Winter</button>
-            </div>
-          </div>
-
-          <!-- Month Selector Grid (Jan - Dec) -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-[11px] text-slate-400">
-              <span>Or click a Month:</span>
-              <span class="text-[10px] text-slate-500 font-mono">12 Months</span>
-            </div>
-            <div id="month-grid" class="grid grid-cols-4 gap-1.5">
-              <!-- Populated by app.js (Jan - Dec) -->
-            </div>
+          <!-- 12-Month Grid -->
+          <div id="month-grid" class="grid grid-cols-4 gap-1.5">
+            <!-- Populated by app.js (Jan - Dec) -->
           </div>
         </section>
 
-        <!-- 4. NUMBER OF DAYS FOR TRAVEL -->
-        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+        <!-- 4. NUMBER OF TRAVEL DAYS & TRIP START DATE -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-white flex items-center gap-1.5">
               <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
-              <span>4. Number of Travel Days</span>
+              <span>4. Number of Travel Days &amp; Start Date</span>
             </label>
             <div class="flex items-center gap-1.5">
-              <button onclick="adjustTripDays(-1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
+              <button type="button" onclick="adjustTripDays(-1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
               <span id="trip-days-badge" class="text-xs font-mono font-extrabold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2.5 py-0.5 rounded">7 Days</span>
-              <button onclick="adjustTripDays(1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
+              <button type="button" onclick="adjustTripDays(1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
             </div>
           </div>
 
+          <!-- Trip Duration Slider -->
           <input type="range" id="trip-days-slider" min="2" max="28" value="7" oninput="setTripDays(this.value)" class="w-full" />
 
+          <!-- Duration Quick Buttons -->
           <div class="flex items-center justify-between gap-1 pt-0.5">
-            <button onclick="setTripDays(3)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">3d Weekend</button>
-            <button onclick="setTripDays(5)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">5d Break</button>
-            <button onclick="setTripDays(7)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">7d Week</button>
-            <button onclick="setTripDays(10)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">10d</button>
-            <button onclick="setTripDays(14)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">14d</button>
+            <button type="button" onclick="setTripDays(3)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">3d Weekend</button>
+            <button type="button" onclick="setTripDays(5)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">5d Break</button>
+            <button type="button" onclick="setTripDays(7)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">7d Week</button>
+            <button type="button" onclick="setTripDays(10)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">10d</button>
+            <button type="button" onclick="setTripDays(14)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">14d</button>
+          </div>
+
+          <!-- Start Date Selection in the Number of Days Column -->
+          <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span>Trip Start Date:</span>
+              </span>
+              <span id="date-range-summary-badge" class="font-mono text-[10px] font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded">
+                Returns: 17 Oct
+              </span>
+            </div>
+
+            <div class="relative">
+              <input
+                type="date"
+                id="trip-start-date"
+                onchange="handleStartDateChange(this.value)"
+                class="w-full bg-slate-900 border border-slate-700 hover:border-purple-500/50 rounded-lg px-2.5 py-2 text-xs font-mono font-semibold text-white focus:outline-none focus:border-purple-400 cursor-pointer"
+              />
+            </div>
+
+            <!-- Quick Start Date Presets -->
+            <div class="flex items-center justify-between gap-1 pt-0.5">
+              <button type="button" onclick="setQuickStartDate('today')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Today</button>
+              <button type="button" onclick="setQuickStartDate('next-weekend')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Next Sat</button>
+              <button type="button" onclick="setQuickStartDate('first-of-month')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">1st of Month</button>
+            </div>
           </div>
         </section>
 
