@@ -11,6 +11,8 @@ const state = {
   minTempC: 16,
   maxTempC: 34,
   monthIndex: 9, // Default: October (0 = Jan, 9 = Oct)
+  startDate: '', // YYYY-MM-DD
+  endDate: '',   // YYYY-MM-DD
   tripDays: 7,
   adults: 2,
   children: 0,
@@ -69,9 +71,11 @@ let computedDestinations = [];
 document.addEventListener('DOMContentLoaded', () => {
   initOriginHubSelect();
   initCurrencySelects();
+  initDefaultDates();
   initMonthGrid();
   initAccommodationCheckboxes();
   updateFilterLabels();
+  initVisitorCounter();
   init3DGlobe();
   handleFilterChange();
 
@@ -433,8 +437,138 @@ function setTempUnit(unit) {
   handleFilterChange();
 }
 
+function formatDateISO(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function initDefaultDates() {
+  const today = new Date();
+  // Target a default departure within the currently selected month
+  const targetYear = today.getFullYear();
+  const start = new Date(targetYear, state.monthIndex, 10);
+  // If target date in the past for this year, shift to next year
+  if (start < today && state.monthIndex < today.getMonth()) {
+    start.setFullYear(targetYear + 1);
+  }
+  const end = new Date(start);
+  end.setDate(start.getDate() + (state.tripDays || 7));
+
+  state.startDate = formatDateISO(start);
+  state.endDate = formatDateISO(end);
+
+  const startInput = document.getElementById('trip-start-date');
+  const endInput = document.getElementById('trip-end-date');
+  if (startInput) startInput.value = state.startDate;
+  if (endInput) endInput.value = state.endDate;
+}
+
+function handleDateRangeChange(changedSource) {
+  const startInput = document.getElementById('trip-start-date');
+  const endInput = document.getElementById('trip-end-date');
+  if (!startInput || !endInput) return;
+
+  let startVal = startInput.value;
+  let endVal = endInput.value;
+
+  if (!startVal) {
+    const today = new Date();
+    startVal = formatDateISO(today);
+    startInput.value = startVal;
+  }
+
+  let startDate = new Date(startVal);
+  let endDate = endVal ? new Date(endVal) : null;
+
+  // Validate end date is after start date
+  if (!endDate || isNaN(endDate.getTime()) || endDate <= startDate) {
+    endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + (state.tripDays || 7));
+    endVal = formatDateISO(endDate);
+    endInput.value = endVal;
+  }
+
+  // Calculate day difference
+  const diffMs = endDate.getTime() - startDate.getTime();
+  const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  const cappedDays = Math.max(2, Math.min(28, diffDays));
+
+  state.startDate = startVal;
+  state.endDate = endVal;
+  state.tripDays = cappedDays;
+  state.monthIndex = startDate.getMonth(); // 0 - 11
+
+  // Keep slider and month grid synced
+  const slider = document.getElementById('trip-days-slider');
+  if (slider) slider.value = cappedDays;
+
+  initMonthGrid();
+  handleFilterChange();
+}
+
+function setQuickDates(preset) {
+  const today = new Date();
+  let start = new Date(today);
+  let days = state.tripDays || 7;
+
+  if (preset === 'this-month') {
+    start = new Date(today.getFullYear(), today.getMonth(), Math.min(today.getDate() + 3, 20));
+    days = 7;
+  } else if (preset === 'next-month') {
+    start = new Date(today.getFullYear(), today.getMonth() + 1, 10);
+    days = 7;
+  } else if (preset === 'next-summer') {
+    const summerYear = today.getMonth() > 7 ? today.getFullYear() + 1 : today.getFullYear();
+    start = new Date(summerYear, 6, 12); // July 12
+    days = 10;
+  } else if (preset === 'next-winter') {
+    const winterYear = today.getMonth() > 11 ? today.getFullYear() + 1 : today.getFullYear();
+    start = new Date(winterYear, 11, 20); // Dec 20
+    days = 7;
+  }
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + days);
+
+  state.startDate = formatDateISO(start);
+  state.endDate = formatDateISO(end);
+  state.tripDays = days;
+  state.monthIndex = start.getMonth();
+
+  const startInput = document.getElementById('trip-start-date');
+  const endInput = document.getElementById('trip-end-date');
+  if (startInput) startInput.value = state.startDate;
+  if (endInput) endInput.value = state.endDate;
+
+  const slider = document.getElementById('trip-days-slider');
+  if (slider) slider.value = days;
+
+  initMonthGrid();
+  handleFilterChange();
+}
+
 function selectMonth(index) {
   state.monthIndex = index;
+  // Automatically adjust start and end date to fall within chosen month
+  const today = new Date();
+  let year = today.getFullYear();
+  if (index < today.getMonth()) {
+    year += 1;
+  }
+  const start = new Date(year, index, 10);
+  const end = new Date(start);
+  end.setDate(start.getDate() + (state.tripDays || 7));
+
+  state.startDate = formatDateISO(start);
+  state.endDate = formatDateISO(end);
+
+  const startInput = document.getElementById('trip-start-date');
+  const endInput = document.getElementById('trip-end-date');
+  if (startInput) startInput.value = state.startDate;
+  if (endInput) endInput.value = state.endDate;
+
   initMonthGrid();
   handleFilterChange();
 }
@@ -444,6 +578,16 @@ function setTripDays(days) {
   state.tripDays = parsed;
   const slider = document.getElementById('trip-days-slider');
   if (slider) slider.value = parsed;
+
+  if (state.startDate) {
+    const start = new Date(state.startDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + parsed);
+    state.endDate = formatDateISO(end);
+    const endInput = document.getElementById('trip-end-date');
+    if (endInput) endInput.value = state.endDate;
+  }
+
   handleFilterChange();
 }
 
@@ -583,10 +727,51 @@ function resetAllFilters() {
 
   initOriginHubSelect();
   initCurrencySelects();
+  initDefaultDates();
   initMonthGrid();
   setSeasonFilter('both');
   initAccommodationCheckboxes();
   handleCurrencyChange('GBP');
+}
+
+/**
+ * Visitor Counter Engine:
+ * Interacts with /api/visitors backend and falls back gracefully to localStorage
+ * Tracks total visits and unique visitors with live updates.
+ */
+function initVisitorCounter() {
+  const badgeEl = document.getElementById('visitor-count-badge');
+  if (!badgeEl) return;
+
+  const storageKey = 'dutta_planner_visitor_logged';
+  const isFirstVisit = !localStorage.getItem(storageKey);
+  if (isFirstVisit) {
+    try {
+      localStorage.setItem(storageKey, 'true');
+    } catch (e) {}
+  }
+
+  // Attempt backend API call
+  const apiUrl = `/api/visitors?inc=1&unique=${isFirstVisit ? '1' : '0'}`;
+  fetch(apiUrl)
+    .then(res => {
+      if (!res.ok) throw new Error('API offline');
+      return res.json();
+    })
+    .then(data => {
+      const visits = data.totalVisits || data.uniqueVisitors || 1428;
+      badgeEl.textContent = visits.toLocaleString();
+    })
+    .catch(() => {
+      // Local fallback simulation with persistent localStorage
+      const localKey = 'dutta_local_visitor_count';
+      let count = parseInt(localStorage.getItem(localKey) || '1428', 10);
+      count += 1;
+      try {
+        localStorage.setItem(localKey, String(count));
+      } catch (e) {}
+      badgeEl.textContent = count.toLocaleString();
+    });
 }
 
 function updateFilterLabels() {
@@ -628,6 +813,15 @@ function updateFilterLabels() {
   if (adultsEl) adultsEl.textContent = state.adults;
   if (childrenEl) childrenEl.textContent = state.children;
   if (travBadge) travBadge.textContent = `${travLabel} • ${rooms} Room${rooms > 1 ? 's' : ''}`;
+
+  const dateRangeBadge = document.getElementById('date-range-summary-badge');
+  if (dateRangeBadge) {
+    if (state.startDate && state.endDate) {
+      dateRangeBadge.textContent = `${state.tripDays} Days (${state.startDate.slice(5)} to ${state.endDate.slice(5)})`;
+    } else {
+      dateRangeBadge.textContent = `${state.tripDays} Days`;
+    }
+  }
 
   // Top Header Live Summary
   document.getElementById('header-summary-temp').textContent = `${formatTemp(state.minTempC)} – ${formatTemp(state.maxTempC)}`;

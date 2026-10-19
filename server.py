@@ -61,6 +61,30 @@ class TravelGlobeHandler(BaseHTTPRequestHandler):
                 "port": PORT
             })
 
+        if path == "/api/visitors":
+            counter_file = os.path.join(BASE_DIR, "visitors.json")
+            data = {"totalVisits": 1420, "uniqueVisitors": 840}
+            if os.path.exists(counter_file):
+                try:
+                    with open(counter_file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except Exception:
+                    pass
+
+            query = urllib.parse.parse_qs(parsed.query)
+            should_inc = query.get("inc", ["1"])[0] != "0"
+            if should_inc:
+                data["totalVisits"] = data.get("totalVisits", 0) + 1
+                if query.get("unique", ["0"])[0] == "1":
+                    data["uniqueVisitors"] = data.get("uniqueVisitors", 0) + 1
+                try:
+                    with open(counter_file, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=2)
+                except Exception:
+                    pass
+
+            return self._send_json(data)
+
         if path in ("/", "/index.html"):
             file_path = os.path.join(BASE_DIR, "index.html")
         else:

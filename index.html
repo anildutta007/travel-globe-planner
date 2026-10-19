@@ -67,12 +67,12 @@
         <div class="flex items-center gap-2 text-[11px] text-slate-400">
           <span class="hidden md:inline">Weather &amp; Budget 3D Explorer • Instant AI Itinerary &amp; Direct Booking</span>
           <span class="hidden md:inline text-slate-600">•</span>
-          <span class="inline-flex items-center gap-1 text-slate-300">
-            <i data-lucide="code-2" class="w-3 h-3 text-cyan-400"></i>
-            <span>Dev: <strong class="text-white font-semibold">Anil Dutta</strong></span>
-            <a href="mailto:Anildutta007@gmail.com" class="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-0.5" title="Connect with Anil Dutta">
+          <span class="inline-flex items-center gap-1.5 text-slate-200 bg-slate-800/80 border border-slate-700/80 px-2 py-0.5 rounded-lg text-xs">
+            <i data-lucide="code-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Developer: <strong class="text-white font-bold">Anil Dutta</strong></span>
+            <a href="mailto:Anildutta007@gmail.com" class="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-0.5 ml-0.5 font-medium" title="Email Anil Dutta">
               <span>(Anildutta007@gmail.com)</span>
-              <i data-lucide="mail" class="w-2.5 h-2.5"></i>
+              <i data-lucide="mail" class="w-3 h-3"></i>
             </a>
           </span>
         </div>
@@ -107,8 +107,20 @@
       </div>
     </div>
 
-    <!-- Right Controls: Origin Hub, Currency, View Mode & Surprise Me -->
+    <!-- Right Controls: Visitor Counter, Origin Hub, Currency, View Mode & Surprise Me -->
     <div class="flex items-center gap-2">
+      <!-- Live Visitor Counter -->
+      <div class="flex items-center bg-slate-950/80 border border-emerald-500/30 hover:border-emerald-500/60 rounded-lg px-2.5 py-1.5 text-xs shadow-sm transition" title="Total Visitors & Views on Dutta Travel Planner">
+        <div class="flex items-center gap-1.5">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <i data-lucide="eye" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="text-slate-400 text-[11px] hidden md:inline">Visitors:</span>
+          <span id="visitor-count-badge" class="font-mono font-bold text-emerald-300 text-xs">1,428</span>
+        </div>
+      </div>
       <!-- Origin Airport Hub -->
       <div class="flex items-center bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs">
         <i data-lucide="plane-takeoff" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 flex-shrink-0"></i>
@@ -256,18 +268,65 @@
           </div>
         </section>
 
-        <!-- 3. TRAVEL MONTH SELECTOR -->
-        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5">
+        <!-- 3. TRAVEL DATES & MONTH SELECTOR -->
+        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 space-y-3">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-white flex items-center gap-1.5">
               <i data-lucide="calendar-days" class="w-4 h-4 text-cyan-400"></i>
-              <span>3. Month of Travel</span>
+              <span>3. Travel Dates &amp; Month</span>
             </label>
             <span id="selected-month-label" class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded border border-cyan-500/30">October</span>
           </div>
 
-          <div id="month-grid" class="grid grid-cols-4 gap-1.5">
-            <!-- Populated by app.js (Jan - Dec) -->
+          <!-- Specific Start & End Date Pickers -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 space-y-2">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-300 font-semibold flex items-center gap-1">
+                <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Choose Travel Dates:</span>
+              </span>
+              <span id="date-range-summary-badge" class="font-mono text-[10px] font-bold text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                7 Days
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label for="trip-start-date" class="block text-[10px] font-semibold text-slate-400 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  id="trip-start-date"
+                  onchange="handleDateRangeChange('start')"
+                  class="w-full bg-slate-950 border border-slate-700 hover:border-cyan-500/50 rounded-md px-2 py-1.5 text-xs font-mono font-semibold text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
+                />
+              </div>
+              <div>
+                <label for="trip-end-date" class="block text-[10px] font-semibold text-slate-400 mb-1">End Date</label>
+                <input
+                  type="date"
+                  id="trip-end-date"
+                  onchange="handleDateRangeChange('end')"
+                  class="w-full bg-slate-950 border border-slate-700 hover:border-cyan-500/50 rounded-md px-2 py-1.5 text-xs font-mono font-semibold text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
+                />
+              </div>
+            </div>
+            <!-- Quick Date Shortcuts -->
+            <div class="flex items-center justify-between gap-1 pt-0.5">
+              <button type="button" onclick="setQuickDates('this-month')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">This Month</button>
+              <button type="button" onclick="setQuickDates('next-month')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Next Month</button>
+              <button type="button" onclick="setQuickDates('next-summer')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Summer</button>
+              <button type="button" onclick="setQuickDates('next-winter')" class="flex-1 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Winter</button>
+            </div>
+          </div>
+
+          <!-- Month Selector Grid (Jan - Dec) -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span>Or click a Month:</span>
+              <span class="text-[10px] text-slate-500 font-mono">12 Months</span>
+            </div>
+            <div id="month-grid" class="grid grid-cols-4 gap-1.5">
+              <!-- Populated by app.js (Jan - Dec) -->
+            </div>
           </div>
         </section>
 

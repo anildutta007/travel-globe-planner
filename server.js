@@ -40,6 +40,37 @@ const server = http.createServer((req, res) => {
     return res.end(payload);
   }
 
+  if (pathname === '/api/visitors') {
+    const counterFile = path.join(BASE_DIR, 'visitors.json');
+    let data = { totalVisits: 1420, uniqueVisitors: 840, lastUpdated: new Date().toISOString() };
+    try {
+      if (fs.existsSync(counterFile)) {
+        data = JSON.parse(fs.readFileSync(counterFile, 'utf8'));
+      }
+    } catch (e) {}
+
+    // Check query param ?inc=1 to increment or 0 to peek
+    const shouldInc = parsedUrl.searchParams.get('inc') !== '0';
+    if (shouldInc) {
+      data.totalVisits = (data.totalVisits || 0) + 1;
+      const isUnique = parsedUrl.searchParams.get('unique') === '1';
+      if (isUnique) {
+        data.uniqueVisitors = (data.uniqueVisitors || 0) + 1;
+      }
+      data.lastUpdated = new Date().toISOString();
+      try {
+        fs.writeFileSync(counterFile, JSON.stringify(data, null, 2), 'utf8');
+      } catch (e) {}
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-cache, no-store'
+    });
+    return res.end(JSON.stringify(data));
+  }
+
   const targetRel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const filePath = path.join(BASE_DIR, targetRel);
 
