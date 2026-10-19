@@ -23,6 +23,7 @@ const state = {
   mapMode: '3d', // '3d' | '2d'
   autoRotate: true,
   globeTextureIndex: 0,
+  filterMode: 'simple', // 'simple' | 'advanced'
   selectedDestinationId: null,
   activeModalTier: '4star',
   itineraryVisible: false
@@ -592,6 +593,51 @@ function focusOriginOnGlobe() {
   }
 }
 
+function setFilterMode(mode) {
+  state.filterMode = mode;
+  const simpleBtn = document.getElementById('filter-mode-simple-btn');
+  const advBtn = document.getElementById('filter-mode-adv-btn');
+  const advSection = document.getElementById('advanced-filters-section');
+  const advToggleBtn = document.getElementById('advanced-filters-toggle-btn');
+  const advToggleChevron = document.getElementById('advanced-filters-chevron');
+
+  const isSimple = mode === 'simple';
+
+  if (simpleBtn && advBtn) {
+    if (isSimple) {
+      simpleBtn.className = 'flex-1 py-1 px-2 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-sm flex items-center justify-center gap-1.5 transition';
+      advBtn.className = 'flex-1 py-1 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition';
+    } else {
+      advBtn.className = 'flex-1 py-1 px-2 rounded-lg text-xs font-bold bg-purple-600 text-white shadow-sm flex items-center justify-center gap-1.5 transition';
+      simpleBtn.className = 'flex-1 py-1 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition';
+    }
+  }
+
+  if (advSection) {
+    if (isSimple) {
+      advSection.classList.add('hidden');
+    } else {
+      advSection.classList.remove('hidden');
+    }
+  }
+
+  if (advToggleBtn) {
+    advToggleBtn.classList.toggle('bg-purple-950/40', !isSimple);
+    advToggleBtn.classList.toggle('border-purple-500/40', !isSimple);
+  }
+  if (advToggleChevron) {
+    advToggleChevron.style.transform = isSimple ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function toggleAdvancedFilters() {
+  setFilterMode(state.filterMode === 'simple' ? 'advanced' : 'simple');
+}
+
 function setBudgetGBP(val) {
   state.budgetGBP = Math.max(200, Math.min(25000, parseInt(val, 10) || 3000));
   const slider = document.getElementById('budget-slider');
@@ -689,6 +735,7 @@ function resetAllFilters() {
   setSeasonFilter('both');
   initAccommodationCheckboxes();
   handleCurrencyChange('GBP');
+  setFilterMode('simple');
 }
 
 /**
