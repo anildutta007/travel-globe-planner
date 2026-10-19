@@ -1593,6 +1593,7 @@ function renderDestinationModalContent(dest) {
   if (basisPanel) {
     const activeTier = dest.tierBreakdowns[state.activeModalTier] || dest.primaryTier;
     const dates = getSampleTravelDates();
+    const currCode = state.currency || 'GBP';
     const primaryHotelName = (activeTier.exampleProperty || dest.city).split('/')[0].trim();
     const hotelCleanQuery = `${primaryHotelName}, ${dest.city}`;
     const hotelQueryEncoded = encodeURIComponent(hotelCleanQuery);
