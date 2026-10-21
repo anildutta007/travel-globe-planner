@@ -1598,17 +1598,25 @@ function renderDestinationModalContent(dest) {
     const hotelCleanQuery = `${primaryHotelName}, ${dest.city}`;
     const hotelQueryEncoded = encodeURIComponent(hotelCleanQuery);
 
-    // Google Search query for direct Google Hotel / Google Travel Knowledge Graph with live rates
-    const googleHotelDirectUrl = `https://www.google.com/search?q=${encodeURIComponent(`${primaryHotelName} hotel ${dest.city} prices rates`)}`;
+    // Google Hotels metasearch direct property search (reliably opens hotel overview, photos, reviews & rate comparisons)
+    const googleHotelsUrl = `https://www.google.com/travel/hotels?q=${encodeURIComponent(`${primaryHotelName} ${dest.city}`)}`;
 
-    // Booking.com direct hotel search URL
+    // Booking.com destination search with dates and occupancy
     const bookingHotelUrl = activeTier.tierId === 'airbnb'
       ? `https://www.airbnb.co.uk/s/${encodeURIComponent(dest.city)}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`
-      : `https://www.booking.com/searchresults.html?ss=${hotelQueryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${activeTier.roomsNeeded}&selected_currency=${currCode}`;
+      : `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(dest.city + ', ' + dest.country)}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${activeTier.roomsNeeded}&selected_currency=${currCode}`;
 
-    // Direct hotel rates link routes to Booking.com directly for instant room pricing, with Google Travel/Search companion
-    const specificHotelBookingUrl = bookingHotelUrl;
-    const secondaryHotelUrl = activeTier.tierId === 'airbnb' ? `https://www.google.com/search?q=${encodeURIComponent(`Airbnb vacation rentals ${dest.city}`)}` : googleHotelDirectUrl;
+    // Tripadvisor direct hotel search
+    const tripadvisorUrl = `https://www.tripadvisor.com/Search?q=${encodeURIComponent(`${primaryHotelName} ${dest.city}`)}&ssrc=h`;
+
+    // Direct property rates link uses Google Hotels metasearch which displays the exact property card, photos, and comparison prices across all providers
+    const specificHotelBookingUrl = activeTier.tierId === 'airbnb'
+      ? `https://www.airbnb.co.uk/s/${encodeURIComponent(dest.city)}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`
+      : googleHotelsUrl;
+
+    const secondaryHotelUrl = activeTier.tierId === 'airbnb'
+      ? `https://www.google.com/travel/hotels?q=${encodeURIComponent(`vacation rentals ${dest.city}`)}`
+      : bookingHotelUrl;
     const skyscannerFlightUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}&currency=${currCode}`;
 
     const hotelSeasonText = dest.isOnPeak
@@ -1679,20 +1687,30 @@ function renderDestinationModalContent(dest) {
               target="_blank"
               rel="noopener noreferrer"
               class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
-              title="Open direct property listing and live nightly rates for ${primaryHotelName}"
+              title="Open Google Hotels live rates and details for ${primaryHotelName}"
             >
               <i data-lucide="building" class="w-3 h-3 text-amber-400"></i>
               <span>View "${primaryHotelName}" Rates</span>
               <i data-lucide="external-link" class="w-3 h-3"></i>
             </a>
             <a
+              href="${tripadvisorUrl}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="py-1.5 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
+              title="View reviews and photos on Tripadvisor"
+            >
+              <span>Tripadvisor</span>
+              <i data-lucide="arrow-up-right" class="w-3 h-3 text-emerald-400"></i>
+            </a>
+            <a
               href="${secondaryHotelUrl}"
               target="_blank"
               rel="noopener noreferrer"
               class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
-              title="Compare live rates on Google Hotels / Travel"
+              title="Explore all hotels on Booking.com"
             >
-              <span>Google Hotels</span>
+              <span>Booking.com</span>
               <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-400"></i>
             </a>
           </div>
