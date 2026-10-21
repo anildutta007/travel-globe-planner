@@ -234,29 +234,29 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2.5">
+          <div class="grid grid-cols-2 gap-2">
             <!-- Beach Sun Card -->
             <button
               type="button"
               id="vibe-card-beach"
               onclick="selectVibe('beach')"
-              class="relative rounded-2xl overflow-hidden h-28 border border-amber-400 ring-2 ring-pink-500/80 shadow-lg text-left p-3 flex flex-col justify-between transition-all group scale-[1.02]"
+              class="relative rounded-xl overflow-hidden h-16 sm:h-20 border border-amber-400 ring-2 ring-pink-500/80 shadow text-left p-2 flex flex-col justify-between transition-all group scale-[1.02]"
             >
               <img
                 src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80"
                 alt="Beach Sun"
                 class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-black/30"></div>
               
               <!-- Check badge -->
-              <div id="vibe-check-beach" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
-                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              <div id="vibe-check-beach" class="relative z-10 w-4 h-4 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow self-end">
+                <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
               </div>
 
-              <div class="relative z-10">
-                <div class="text-sm font-extrabold text-white leading-tight">Beach Sun</div>
-                <div class="text-[11px] font-bold text-amber-300 font-mono">28°+</div>
+              <div class="relative z-10 flex items-baseline justify-between w-full">
+                <span class="text-xs font-extrabold text-white leading-tight">Beach Sun</span>
+                <span class="text-[10px] font-bold text-amber-300 font-mono">28°+</span>
               </div>
             </button>
 
@@ -265,22 +265,22 @@
               type="button"
               id="vibe-card-city"
               onclick="selectVibe('city')"
-              class="relative rounded-2xl overflow-hidden h-28 border border-slate-800/80 shadow text-left p-3 flex flex-col justify-between transition-all group"
+              class="relative rounded-xl overflow-hidden h-16 sm:h-20 border border-slate-800/80 shadow text-left p-2 flex flex-col justify-between transition-all group"
             >
               <img
                 src="https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=400&q=80"
                 alt="City Break"
                 class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-black/30"></div>
 
-              <div id="vibe-check-city" style="display: none;" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
-                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              <div id="vibe-check-city" style="display: none;" class="relative z-10 w-4 h-4 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow self-end">
+                <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
               </div>
 
-              <div class="relative z-10">
-                <div class="text-sm font-extrabold text-white leading-tight">City Break</div>
-                <div class="text-[11px] font-bold text-orange-300 font-mono">15–25°</div>
+              <div class="relative z-10 flex items-baseline justify-between w-full">
+                <span class="text-xs font-extrabold text-white leading-tight">City Break</span>
+                <span class="text-[10px] font-bold text-orange-300 font-mono">15–25°</span>
               </div>
             </button>
 
@@ -289,22 +289,22 @@
               type="button"
               id="vibe-card-mild"
               onclick="selectVibe('mild')"
-              class="relative rounded-2xl overflow-hidden h-28 border border-slate-800/80 shadow text-left p-3 flex flex-col justify-between transition-all group"
+              class="relative rounded-xl overflow-hidden h-16 sm:h-20 border border-slate-800/80 shadow text-left p-2 flex flex-col justify-between transition-all group"
             >
               <img
                 src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=400&q=80"
                 alt="Mild and Green"
                 class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-black/30"></div>
 
-              <div id="vibe-check-mild" style="display: none;" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
-                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              <div id="vibe-check-mild" style="display: none;" class="relative z-10 w-4 h-4 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow self-end">
+                <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
               </div>
 
-              <div class="relative z-10">
-                <div class="text-sm font-extrabold text-white leading-tight">Mild &amp; Green</div>
-                <div class="text-[11px] font-bold text-emerald-300 font-mono">12–21°</div>
+              <div class="relative z-10 flex items-baseline justify-between w-full">
+                <span class="text-xs font-extrabold text-white leading-tight">Mild &amp; Green</span>
+                <span class="text-[10px] font-bold text-emerald-300 font-mono">12–21°</span>
               </div>
             </button>
 
@@ -313,22 +313,22 @@
               type="button"
               id="vibe-card-snow"
               onclick="selectVibe('snow')"
-              class="relative rounded-2xl overflow-hidden h-28 border border-slate-800/80 shadow text-left p-3 flex flex-col justify-between transition-all group"
+              class="relative rounded-xl overflow-hidden h-16 sm:h-20 border border-slate-800/80 shadow text-left p-2 flex flex-col justify-between transition-all group"
             >
               <img
                 src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=400&q=80"
                 alt="Snow Escape"
                 class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-black/30"></div>
 
-              <div id="vibe-check-snow" style="display: none;" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
-                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              <div id="vibe-check-snow" style="display: none;" class="relative z-10 w-4 h-4 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow self-end">
+                <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
               </div>
 
-              <div class="relative z-10">
-                <div class="text-sm font-extrabold text-white leading-tight">Snow Escape</div>
-                <div class="text-[11px] font-bold text-cyan-300 font-mono">&lt;5°</div>
+              <div class="relative z-10 flex items-baseline justify-between w-full">
+                <span class="text-xs font-extrabold text-white leading-tight">Snow Escape</span>
+                <span class="text-[10px] font-bold text-cyan-300 font-mono">&lt;5°</span>
               </div>
             </button>
           </div>
@@ -577,6 +577,16 @@
       <div class="p-4 border-b border-slate-800/80 space-y-3 bg-slate-900/90 backdrop-blur-md">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
+            <!-- Mobile Back Button to return to Preferences choices -->
+            <button
+              type="button"
+              onclick="setMobileTab('filters')"
+              class="lg:hidden p-1.5 -ml-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1 text-xs font-semibold"
+              title="Back to Preferences choices"
+            >
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Filters</span>
+            </button>
             <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
             <h2 class="text-sm font-extrabold text-white tracking-tight">Top picks for you</h2>
           </div>
@@ -585,34 +595,7 @@
           </span>
         </div>
 
-        <!-- 3 Segmented Pill Filter Buttons: Best value | Cheapest | Warmest -->
-        <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-          <button
-            type="button"
-            id="tab-sort-value"
-            onclick="setSortTab('value')"
-            class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow-md transition text-center"
-          >
-            Best value
-          </button>
-          <button
-            type="button"
-            id="tab-sort-cheapest"
-            onclick="setSortTab('cheapest')"
-            class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition text-center"
-          >
-            Cheapest
-          </button>
-          <button
-            type="button"
-            id="tab-sort-warmest"
-            onclick="setSortTab('warmest')"
-            class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition text-center"
-          >
-            Warmest
-          </button>
-        </div>
-
+        <!-- 3 Segmented Pill Filter Buttons removed as requested to streamline screen -->
         <!-- Hidden select to keep existing backend handlers synchronized -->
         <select id="sort-select" onchange="renderMatchingDestinationsList()" class="hidden">
           <option value="total_asc" selected>Price: Low to High</option>
@@ -708,12 +691,13 @@
         />
         <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-black/30"></div>
 
-        <!-- Floating Close X Button -->
+        <!-- Floating Close X / Back Button -->
         <button
           onclick="closeDestinationModal()"
-          class="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-slate-950/70 hover:bg-slate-950 text-slate-300 hover:text-white flex items-center justify-center border border-white/20 transition backdrop-blur-md shadow-lg"
+          class="absolute top-3 left-3 sm:left-auto sm:right-3 z-20 px-3 py-1.5 rounded-full bg-slate-950/80 hover:bg-slate-950 text-white flex items-center gap-1.5 border border-white/25 transition backdrop-blur-md shadow-lg text-xs font-bold"
         >
-          <i data-lucide="x" class="w-4 h-4"></i>
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Back to picks</span>
         </button>
 
         <!-- Destination Title & Badges in Hero -->

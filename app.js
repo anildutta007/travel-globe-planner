@@ -28,7 +28,7 @@ const state = {
   selectedDestinationId: null,
   activeModalTier: '4star',
   itineraryVisible: false,
-  mobileActiveTab: 'globe', // 'filters' | 'globe' | 'picks'
+  mobileActiveTab: 'filters', // Default to Preferences on mobile as requested
   viewportMode: 'auto' // 'auto' | 'mobile' | 'desktop'
 };
 
@@ -486,7 +486,7 @@ function initViewportAndMobileNav() {
   updateViewportModeUI();
 
   if (isMobileScreen) {
-    setMobileTab('globe');
+    setMobileTab('filters'); // Default to Preferences on mobile
   } else {
     // Desktop: make sure both left and right panels are visible
     const leftPanel = document.getElementById('left-filter-panel');
@@ -1153,9 +1153,10 @@ function init3DGlobe() {
       .htmlTransitionDuration(0)
       .htmlElement(d => createGlobePinElement(d));
 
-    // Set initial camera & smooth auto-rotation
+    // Set initial camera & smooth auto-rotation (higher altitude 2.5 on mobile so globe is compact)
     const origin = getOriginHub();
-    globeInstance.pointOfView({ lat: 24, lng: origin.lng + 15, altitude: 2.15 }, 800);
+    const initAlt = window.innerWidth < 1024 ? 2.5 : 2.15;
+    globeInstance.pointOfView({ lat: 24, lng: origin.lng + 15, altitude: initAlt }, 800);
 
     const controls = globeInstance.controls();
     if (controls) {
@@ -1400,8 +1401,17 @@ function focusGlobeRegion(region) {
 function handleViewportResize() {
   const container = document.getElementById('globe-viz');
   if (globeInstance && container) {
+    const isMobile = window.innerWidth < 1024;
     globeInstance.width(container.clientWidth);
     globeInstance.height(container.clientHeight);
+    
+    // On mobile phone, set altitude higher (2.6) to keep globe slightly smaller and comfortably framed
+    if (isMobile) {
+      const curPov = globeInstance.pointOfView();
+      if (curPov && curPov.altitude < 2.3) {
+        globeInstance.pointOfView({ ...curPov, altitude: 2.5 }, 400);
+      }
+    }
   }
   if (leafletMap) {
     leafletMap.invalidateSize();
