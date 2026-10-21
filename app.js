@@ -509,6 +509,16 @@ function formatDateISO(date) {
   return `${y}-${m}-${d}`;
 }
 
+function formatDateDMY(dateInput) {
+  if (!dateInput) return '';
+  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (isNaN(d.getTime())) return String(dateInput);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 function initDefaultDates() {
   const today = new Date();
   const targetYear = today.getFullYear();
@@ -905,11 +915,18 @@ function updateFilterLabels() {
 
   const dateRangeBadge = document.getElementById('date-range-summary-badge');
   if (dateRangeBadge) {
-    if (state.endDate) {
-      dateRangeBadge.textContent = `Returns: ${state.endDate}`;
+    if (state.startDate && state.endDate) {
+      dateRangeBadge.textContent = `${formatDateDMY(state.startDate)} → ${formatDateDMY(state.endDate)}`;
+    } else if (state.endDate) {
+      dateRangeBadge.textContent = `Returns: ${formatDateDMY(state.endDate)}`;
     } else {
       dateRangeBadge.textContent = `${state.tripDays} Days`;
     }
+  }
+
+  const startDateDisplay = document.getElementById('trip-start-date-display');
+  if (startDateDisplay) {
+    startDateDisplay.textContent = state.startDate ? formatDateDMY(state.startDate) : 'Select date';
   }
 
   // Top Header Live Summary
@@ -1725,7 +1742,7 @@ function renderDestinationModalContent(dest) {
           </h4>
         </div>
         <span class="text-[11px] font-mono text-emerald-300 font-bold">
-          All amounts in ${currCode} • ${state.tripDays} Nights (${dates.checkinISO} → ${dates.checkoutISO})
+          All amounts in ${currCode} • ${state.tripDays} Nights (${dates.checkinDMY} → ${dates.checkoutDMY})
         </span>
       </div>
 
@@ -2054,9 +2071,18 @@ function getSampleTravelDates() {
     return `${yy}${mm}${dd}`;
   };
 
+  const fmtDMY = (d) => {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return {
     checkinISO: fmtISO(checkinDate),
     checkoutISO: fmtISO(checkoutDate),
+    checkinDMY: fmtDMY(checkinDate),
+    checkoutDMY: fmtDMY(checkoutDate),
     checkinSky: fmtSky(checkinDate),
     checkoutSky: fmtSky(checkoutDate)
   };
@@ -2072,7 +2098,7 @@ function renderDirectBookingLinks(dest) {
   const currCode = state.currency || 'GBP';
 
   document.getElementById('booking-links-subtitle').textContent =
-    `Direct booking in ${currCode} for ${getTravellersLabel(false)} • Starting from ${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ${dates.checkinISO} to ${dates.checkoutISO} (${state.tripDays} Nights)`;
+    `Direct booking in ${currCode} for ${getTravellersLabel(false)} • Starting from ${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ${dates.checkinDMY} to ${dates.checkoutDMY} (${state.tripDays} Nights)`;
   document.getElementById('booking-flight-price-pill').textContent =
     `Est. ${formatMoney(dest.flightCostGBP)} (${getTravellersLabel(true)})`;
   document.getElementById('booking-hotel-price-pill').textContent =
