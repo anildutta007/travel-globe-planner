@@ -1598,17 +1598,17 @@ function renderDestinationModalContent(dest) {
     const hotelCleanQuery = `${primaryHotelName}, ${dest.city}`;
     const hotelQueryEncoded = encodeURIComponent(hotelCleanQuery);
 
-    // Google Travel Hotels direct property query (lands directly on the hotel listing card & rate comparison)
-    const googleHotelDirectUrl = `https://www.google.com/travel/search?q=${encodeURIComponent(`${primaryHotelName} hotel in ${dest.city} ${dest.country}`)}&curr=${currCode}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}`;
+    // Google Search query for direct Google Hotel / Google Travel Knowledge Graph with live rates
+    const googleHotelDirectUrl = `https://www.google.com/search?q=${encodeURIComponent(`${primaryHotelName} hotel ${dest.city} prices rates`)}`;
 
     // Booking.com direct hotel search URL
     const bookingHotelUrl = activeTier.tierId === 'airbnb'
       ? `https://www.airbnb.co.uk/s/${encodeURIComponent(dest.city)}--${encodeURIComponent(dest.country)}/homes?checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`
       : `https://www.booking.com/searchresults.html?ss=${hotelQueryEncoded}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${activeTier.roomsNeeded}&selected_currency=${currCode}`;
 
-    // Specific hotel booking link defaults to Google Hotels direct link (which reliably finds the exact property and its rates across Booking.com, Agoda, Expedia, and Official site)
-    const specificHotelBookingUrl = activeTier.tierId === 'airbnb' ? bookingHotelUrl : googleHotelDirectUrl;
-    const secondaryHotelUrl = activeTier.tierId === 'airbnb' ? `https://www.google.com/travel/search?q=${encodeURIComponent(`Airbnb vacation rentals ${dest.city}`)}&curr=${currCode}` : bookingHotelUrl;
+    // Direct hotel rates link routes to Booking.com directly for instant room pricing, with Google Travel/Search companion
+    const specificHotelBookingUrl = bookingHotelUrl;
+    const secondaryHotelUrl = activeTier.tierId === 'airbnb' ? `https://www.google.com/search?q=${encodeURIComponent(`Airbnb vacation rentals ${dest.city}`)}` : googleHotelDirectUrl;
     const skyscannerFlightUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}&currency=${currCode}`;
 
     const hotelSeasonText = dest.isOnPeak
@@ -1690,9 +1690,9 @@ function renderDestinationModalContent(dest) {
               target="_blank"
               rel="noopener noreferrer"
               class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
-              title="Compare all available rooms & deals across Booking.com / Stays"
+              title="Compare live rates on Google Hotels / Travel"
             >
-              <span>Booking.com</span>
+              <span>Google Hotels</span>
               <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-400"></i>
             </a>
           </div>
