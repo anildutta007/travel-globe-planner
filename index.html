@@ -135,6 +135,17 @@
         <!-- Populated by app.js -->
       </select>
 
+      <!-- Device Viewport Mode Toggle (Mobile / PC) -->
+      <button
+        id="btn-viewport-mode-toggle"
+        onclick="toggleViewportDeviceMode()"
+        title="Toggle Mobile / PC Layout"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition"
+      >
+        <i id="viewport-mode-icon" data-lucide="smartphone" class="w-3.5 h-3.5 text-cyan-400"></i>
+        <span id="viewport-mode-text" class="hidden sm:inline">Mobile</span>
+      </button>
+
       <!-- 3D Globe vs 2D Map Switcher -->
       <div class="flex items-center bg-slate-800/90 p-0.5 rounded-lg border border-slate-700">
         <button id="btn-view-3d" onclick="setMapMode('3d')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-cyan-600 text-white shadow flex items-center gap-1 transition">
@@ -156,10 +167,10 @@
   </header>
 
   <!-- ================= MAIN 3-COLUMN WORKSPACE ================= -->
-  <div class="flex-1 flex overflow-hidden relative">
+  <div id="main-workspace-container" class="main-workspace-container flex-1 flex overflow-hidden relative">
 
     <!-- ================= LEFT COLUMN: USER TRAVEL PREFERENCES DECK ================= -->
-    <aside id="left-filter-panel" class="w-80 lg:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col h-full z-20 flex-shrink-0 overflow-y-auto">
+    <aside id="left-filter-panel" class="w-80 lg:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col h-full z-20 flex-shrink-0 overflow-y-auto pb-20 lg:pb-0">
       
       <!-- Panel Header: Title & Departure/Currency Pill -->
       <div class="p-4 border-b border-slate-800/80 bg-slate-900/90 sticky top-0 z-10 backdrop-blur-md space-y-3">
@@ -624,7 +635,7 @@
       </div>
 
       <!-- Scrollable Destination Cards Container -->
-      <div id="matching-destinations-list" class="flex-1 overflow-y-auto p-3 space-y-3">
+      <div id="matching-destinations-list" class="flex-1 overflow-y-auto p-3 space-y-3 pb-20 lg:pb-3">
         <!-- Dynamically rendered by app.js with photographic cards -->
       </div>
 
@@ -642,6 +653,46 @@
     </aside>
 
   </div>
+
+  <!-- ================= MOBILE BOTTOM NAVIGATION BAR ================= -->
+  <nav id="mobile-bottom-nav" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 border-t border-slate-800 backdrop-blur-xl px-4 py-2 flex items-center justify-around shadow-2xl transition-all">
+    
+    <!-- Tab 1: Preferences / Filters -->
+    <button
+      type="button"
+      id="mobile-nav-btn-filters"
+      onclick="setMobileTab('filters')"
+      class="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-slate-400 hover:text-white"
+    >
+      <i data-lucide="sliders" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold tracking-tight">Preferences</span>
+    </button>
+
+    <!-- Tab 2: Interactive Globe (Default Center) -->
+    <button
+      type="button"
+      id="mobile-nav-btn-globe"
+      onclick="setMobileTab('globe')"
+      class="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-cyan-400 font-bold"
+    >
+      <div class="w-7 h-7 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-400/40 shadow-md">
+        <i data-lucide="globe" class="w-4 h-4 text-cyan-300"></i>
+      </div>
+      <span class="text-[10px] font-extrabold tracking-tight text-white">Globe</span>
+    </button>
+
+    <!-- Tab 3: Top Picks -->
+    <button
+      type="button"
+      id="mobile-nav-btn-picks"
+      onclick="setMobileTab('picks')"
+      class="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-slate-400 hover:text-white relative"
+    >
+      <i data-lucide="sparkles" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold tracking-tight">Top Picks</span>
+      <span id="mobile-nav-picks-dot" class="absolute top-1 right-2 w-2 h-2 rounded-full bg-pink-500"></span>
+    </button>
+  </nav>
 
   <!-- ================= DESTINATION DETAIL, ITINERARY PROMPT & BOOKING MODAL ================= -->
   <div id="destination-modal" onclick="if(event.target === this) closeDestinationModal()" class="fixed inset-0 z-[999999] bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4 md:p-6">

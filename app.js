@@ -27,7 +27,9 @@ const state = {
   filterMode: 'simple', // 'simple' | 'advanced'
   selectedDestinationId: null,
   activeModalTier: '4star',
-  itineraryVisible: false
+  itineraryVisible: false,
+  mobileActiveTab: 'globe', // 'filters' | 'globe' | 'picks'
+  viewportMode: 'auto' // 'auto' | 'mobile' | 'desktop'
 };
 
 const GLOBE_TEXTURES = [
@@ -79,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateVibeCardsUI();
   updateFilterLabels();
   initVisitorCounter();
+  initViewportAndMobileNav();
   init3DGlobe();
   handleFilterChange();
 
@@ -458,14 +461,120 @@ function selectVibe(vibeKey) {
 
 function executeHolidaySearch() {
   // Center or highlight the top matching destination or scroll results into view
-  const matches = (window.evaluatedDestinations || []).filter(d => d.passesFilters);
+  const matches = (computedDestinations || []).filter(d => d.isLitUp);
   if (matches.length > 0) {
     const top = matches[0];
-    focusGlobeOnDestination(top.id);
-    showNotification(`Found ${matches.length} matching destinations! Focused on ${top.city}.`, 'success');
+    if (state.mapMode === '3d' && globeInstance) {
+      globeInstance.pointOfView({ lat: top.lat, lng: top.lng, altitude: 1.5 }, 1000);
+    }
+    showNotification(`Found ${matches.length} matching destinations! Top pick: ${top.city}.`, 'success');
   } else {
     showNotification('No destinations matched all criteria. Try adjusting your budget or vibe!', 'warning');
   }
+
+  // If on mobile, transition view to Top Picks list so user sees results immediately
+  if (window.innerWidth < 1024 && !document.body.classList.contains('desktop-forced')) {
+    setMobileTab('picks');
+  }
+}
+
+// ============================================================================
+// MOBILE NAVIGATION & VIEWPORT RESPONSIVENESS
+// ============================================================================
+function initViewportAndMobileNav() {
+  const isMobileScreen = window.innerWidth < 1024;
+  updateViewportModeUI();
+
+  if (isMobileScreen) {
+    setMobileTab('globe');
+  } else {
+    // Desktop: make sure both left and right panels are visible
+    const leftPanel = document.getElementById('left-filter-panel');
+    const rightPanel = document.getElementById('right-matches-column');
+    if (leftPanel) leftPanel.style.display = 'flex';
+    if (rightPanel) rightPanel.style.display = 'flex';
+  }
+}
+
+function setMobileTab(tabName) {
+  state.mobileActiveTab = tabName;
+  const isDesktopForced = document.body.classList.contains('desktop-forced');
+  const isMobileScreen = window.innerWidth < 1024;
+
+  const leftPanel = document.getElementById('left-filter-panel');
+  const rightPanel = document.getElementById('right-matches-column');
+  const globeStage = document.getElementById('globe-stage-column');
+
+  const btnFilters = document.getElementById('mobile-nav-btn-filters');
+  const btnGlobe = document.getElementById('mobile-nav-btn-globe');
+  const btnPicks = document.getElementById('mobile-nav-btn-picks');
+
+  // Reset tab button states
+  [btnFilters, btnGlobe, btnPicks].forEach(btn => {
+    if (btn) {
+      btn.className = 'flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-slate-400 hover:text-white';
+    }
+  });
+
+  if (isMobileScreen && !isDesktopForced) {
+    if (tabName === 'filters') {
+      if (leftPanel) leftPanel.style.display = 'flex';
+      if (rightPanel) rightPanel.style.display = 'none';
+      if (btnFilters) btnFilters.className = 'flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-orange-400 font-bold';
+    } else if (tabName === 'picks') {
+      if (leftPanel) leftPanel.style.display = 'none';
+      if (rightPanel) rightPanel.style.display = 'flex';
+      if (btnPicks) btnPicks.className = 'flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-pink-400 font-bold';
+    } else {
+      // 'globe'
+      if (leftPanel) leftPanel.style.display = 'none';
+      if (rightPanel) rightPanel.style.display = 'none';
+      if (btnGlobe) btnGlobe.className = 'flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-cyan-400 font-bold';
+    }
+
+    // Trigger three-globe resize to ensure perfect aspect ratio
+    setTimeout(handleViewportResize, 50);
+  } else {
+    // Desktop layout
+    if (leftPanel) leftPanel.style.display = 'flex';
+    if (rightPanel) rightPanel.style.display = 'flex';
+  }
+}
+
+function toggleViewportDeviceMode() {
+  const body = document.body;
+  if (body.classList.contains('desktop-forced')) {
+    body.classList.remove('desktop-forced');
+    showNotification('Switched to Mobile-Optimized layout', 'info');
+    initViewportAndMobileNav();
+  } else {
+    body.classList.add('desktop-forced');
+    showNotification('Switched to Full PC / Laptop layout', 'info');
+    const leftPanel = document.getElementById('left-filter-panel');
+    const rightPanel = document.getElementById('right-matches-column');
+    if (leftPanel) leftPanel.style.display = 'flex';
+    if (rightPanel) rightPanel.style.display = 'flex';
+  }
+  updateViewportModeUI();
+  setTimeout(handleViewportResize, 80);
+}
+
+function updateViewportModeUI() {
+  const isDesktopForced = document.body.classList.contains('desktop-forced');
+  const icon = document.getElementById('viewport-mode-icon');
+  const text = document.getElementById('viewport-mode-text');
+  const btn = document.getElementById('btn-viewport-mode-toggle');
+
+  if (isDesktopForced) {
+    if (text) text.textContent = 'PC View';
+    if (icon) icon.setAttribute('data-lucide', 'monitor');
+    if (btn) btn.className = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300 border border-cyan-500/50 text-xs font-bold transition';
+  } else {
+    if (text) text.textContent = 'Mobile View';
+    if (icon) icon.setAttribute('data-lucide', 'smartphone');
+    if (btn) btn.className = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition';
+  }
+  if (window.lucide) lucide.createIcons();
 }
 
 function updateVibeCardsUI() {
