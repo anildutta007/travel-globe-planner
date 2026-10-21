@@ -1867,11 +1867,34 @@ function renderDestinationModalContent(dest) {
               rel="noopener noreferrer"
               class="flex-1 py-1.5 px-2.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
             >
-              <span>Verify ${origin.iata} ⇄ ${dest.iata} Fares on Skyscanner</span>
+              <i data-lucide="plane" class="w-3 h-3 text-cyan-400"></i>
+              <span>Verify ${origin.iata} ⇄ ${dest.iata} on Skyscanner</span>
               <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+            <a
+              href="https://www.google.com/travel/flights?curr=${currCode}&q=${encodeURIComponent(`Flights from ${origin.iata} to ${dest.iata} on ${dates.checkinISO} through ${dates.checkoutISO}`)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
+              title="Compare live airfares on Google Flights"
+            >
+              <span>Google Flights</span>
+              <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-400"></i>
             </a>
           </div>
         </div>
+      </div>
+
+      <!-- Real-Time Data Sources Verification Banner -->
+      <div class="mt-3 p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+          <span><strong>Data Sources:</strong> Flight fares monitored via <em>Skyscanner &amp; Google Flights</em>. Accommodations verified from <em>Booking.com, Hotels.com, Tripadvisor &amp; Airbnb</em>.</span>
+        </div>
+        <span class="text-emerald-400 font-semibold flex items-center gap-1">
+          <i data-lucide="check-circle" class="w-3 h-3"></i>
+          <span>Click links to see live partner availability</span>
+        </span>
       </div>
     `;
   }
