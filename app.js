@@ -1051,9 +1051,10 @@ function createGlobePinElement(d) {
   wrapper.dataset.renderEpoch = String(globeRenderEpoch);
 
   if (d.isOrigin) {
+    const originFlagHtml = getFlagIconHtml(d, "w-4 h-3 rounded-[2px] object-cover inline-block shadow-sm");
     wrapper.innerHTML = `
       <div class="globe-pin-origin flex items-center gap-1.5 shadow-lg shadow-cyan-500/30">
-        <span class="text-sm">🇬🇧</span>
+        ${originFlagHtml}
         <span>${d.city} (${d.iata})</span>
       </div>
     `;
@@ -1062,12 +1063,13 @@ function createGlobePinElement(d) {
 
   const isSelected = state.selectedDestinationId === d.id;
   const tier = d.primaryTier;
+  const flagHtml = getFlagIconHtml(d, "w-4 h-3 rounded-[2px] object-cover inline-block shadow-sm");
 
   // Clean pill presentation matching the new screenshot
   wrapper.innerHTML = `
     <div class="globe-pin-card ${isSelected ? 'pin-selected' : ''} ${!d.matchesBudget ? 'pin-over-budget' : ''}">
       <div class="flex items-center gap-1.5 text-xs font-extrabold leading-tight">
-        <span class="text-sm shrink-0">${d.flag}</span>
+        ${flagHtml}
         <span class="truncate max-w-[110px] text-white">${d.city.split('(')[0].split('&')[0].trim()}</span>
       </div>
       <div class="flex items-center justify-between gap-1.5 text-[10px] font-mono leading-tight pt-0.5">
@@ -1397,24 +1399,102 @@ function update2DMapVisualization() {
   });
 }
 
+// Convert country code or flag emoji to reliable FlagCDN SVG image URL (guarantees flags display on Windows Chrome/Edge/Firefox)
+function getFlagIconHtml(dest, className = "w-4 h-3.5 rounded-[2px] object-cover inline-block shrink-0 shadow-sm") {
+  if (!dest) return '';
+  const flagStr = dest.flag || '';
+  const points = Array.from(flagStr).map(c => c.codePointAt(0));
+
+  // Check if standard regional indicator flag (2 code points between 0x1F1E6 and 0x1F1FF)
+  if (points.length === 2 && points[0] >= 0x1F1E6 && points[0] <= 0x1F1FF && points[1] >= 0x1F1E6 && points[1] <= 0x1F1FF) {
+    const iso = String.fromCharCode(points[0] - 0x1F1E6 + 65, points[1] - 0x1F1E6 + 65).toLowerCase();
+    return `<img src="https://flagcdn.com/w40/${iso}.png" alt="${dest.country || ''}" class="${className}" loading="lazy" onerror="this.outerHTML='${flagStr}'" />`;
+  }
+
+  // Scotland special sub-division flag
+  if (dest.id === 'edinburgh' || flagStr.includes('🏴')) {
+    return `<img src="https://flagcdn.com/w40/gb-sct.png" alt="Scotland" class="${className}" loading="lazy" onerror="this.outerHTML='${flagStr}'" />`;
+  }
+
+  // Fallback to unicode emoji or text
+  return `<span class="inline-block text-base leading-none">${flagStr}</span>`;
+}
+
 // Curated high-resolution landscape photography for top destination cards
 const DESTINATION_HERO_PHOTOS = {
-  barcelona: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=600&q=80', // Sagrada Familia sunset
-  nice: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80', // Cote d'Azur / Promenade
-  lisbon: 'https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=600&q=80', // Lisbon red roofs
-  geneva: 'https://images.unsplash.com/photo-1574873215043-44119461cb3b?auto=format&fit=crop&w=600&q=80', // Geneva lake & mountains
-  rome: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80', // Colosseum sunset
-  paris: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=600&q=80', // Eiffel / Seine
-  marrakech: 'https://images.unsplash.com/photo-1597212618440-806262de4f6b?auto=format&fit=crop&w=600&q=80', // Marrakech Riad
-  dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=600&q=80', // Dubai skyline
-  istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=600&q=80', // Hagia Sophia sunset
-  newyork: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=80', // Manhattan skyline
-  capetown: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=600&q=80', // Table mountain
-  tokyo: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80', // Tokyo tower
-  singapore: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=600&q=80', // Marina Bay
-  sydney: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=600&q=80', // Opera house
-  seville: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=600&q=80', // Plaza de Espana
-  amsterdam: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=600&q=80', // Canal
+  lisbon: 'https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=600&q=80',
+  seville: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=600&q=80',
+  barcelona: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=600&q=80',
+  rome: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80',
+  amalfi: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80',
+  athens: 'https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=600&q=80',
+  santorini: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=600&q=80',
+  dubrovnik: 'https://images.unsplash.com/photo-1555990538-16474e645936?auto=format&fit=crop&w=600&q=80',
+  tenerife: 'https://images.unsplash.com/photo-1589553416260-f586c8f1514f?auto=format&fit=crop&w=600&q=80',
+  madeira: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80',
+  malta: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=600&q=80',
+  cyprus: 'https://images.unsplash.com/photo-1580837119756-563d608dd119?auto=format&fit=crop&w=600&q=80',
+  istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=600&q=80',
+  antalya: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=600&q=80',
+  paris: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=600&q=80',
+  nice: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80',
+  prague: 'https://images.unsplash.com/photo-1541849546-216549ae216d?auto=format&fit=crop&w=600&q=80',
+  budapest: 'https://images.unsplash.com/photo-1549877452-9c387954fbc2?auto=format&fit=crop&w=600&q=80',
+  vienna: 'https://images.unsplash.com/photo-1516550893923-42d28e5677af?auto=format&fit=crop&w=600&q=80',
+  zermatt: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=600&q=80',
+  reykjavik: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=600&q=80',
+  rovaniemi: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&q=80',
+  amsterdam: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=600&q=80',
+  edinburgh: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=600&q=80',
+  tokyo: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80',
+  kyoto: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=600&q=80',
+  bangkok: 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=600&q=80',
+  phuket: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?auto=format&fit=crop&w=600&q=80',
+  bali: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=600&q=80',
+  singapore: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=600&q=80',
+  maldives: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=600&q=80',
+  hanoi: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=600&q=80',
+  goa: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80',
+  jaipur: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=600&q=80',
+  colombo: 'https://images.unsplash.com/photo-1588598198321-9735fd52455b?auto=format&fit=crop&w=600&q=80',
+  seoul: 'https://images.unsplash.com/photo-1538485399081-7191377e8241?auto=format&fit=crop&w=600&q=80',
+  taipei: 'https://images.unsplash.com/photo-1470004914216-30778578afb2?auto=format&fit=crop&w=600&q=80',
+  dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=600&q=80',
+  muscat: 'https://images.unsplash.com/photo-1549488344-cbb6c34cf08b?auto=format&fit=crop&w=600&q=80',
+  marrakech: 'https://images.unsplash.com/photo-1597212618440-806262de4f6b?auto=format&fit=crop&w=600&q=80',
+  cairo: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=600&q=80',
+  capetown: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=600&q=80',
+  zanzibar: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=600&q=80',
+  mauritius: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=600&q=80',
+  newyork: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=80',
+  miami: 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&w=600&q=80',
+  cancun: 'https://images.unsplash.com/photo-1510414842594-a61782153f5b?auto=format&fit=crop&w=600&q=80',
+  costarica: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
+  barbados: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+  cusco: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=600&q=80',
+  rio: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=600&q=80',
+  buenosaires: 'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?auto=format&fit=crop&w=600&q=80',
+  banff: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80',
+  sydney: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=600&q=80',
+  queenstown: 'https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=600&q=80',
+  fiji: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80',
+  marrakech_agadir: 'https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=600&q=80',
+  krakow: 'https://images.unsplash.com/photo-1519197924294-4ba991a11128?auto=format&fit=crop&w=600&q=80',
+  porto: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=600&q=80',
+  mallorca: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80',
+  tallinn: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=600&q=80',
+  kerala: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=600&q=80',
+  florence: 'https://images.unsplash.com/photo-1543429776-2782fc8e1acd?auto=format&fit=crop&w=600&q=80',
+  zurich_lucerne: 'https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=600&q=80',
+  tromso: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=600&q=80',
+  lanzarote: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+  algarve: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80',
+  danang: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=600&q=80',
+  kualalumpur: 'https://images.unsplash.com/photo-1544077960-604201fe74bc?auto=format&fit=crop&w=600&q=80',
+  honolulu: 'https://images.unsplash.com/photo-1542259009477-d625272157b7?auto=format&fit=crop&w=600&q=80',
+  cartagena: 'https://images.unsplash.com/photo-1583531352515-8884af319dc1?auto=format&fit=crop&w=600&q=80',
+  seychelles: 'https://images.unsplash.com/photo-1589979481223-deb893043163?auto=format&fit=crop&w=600&q=80',
+  geneva: 'https://images.unsplash.com/photo-1574873215043-44119461cb3b?auto=format&fit=crop&w=600&q=80',
   default: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&q=80'
 };
 
@@ -1564,7 +1644,7 @@ function renderMatchingDestinationsList() {
           <!-- Floating City & Season Badge inside photo -->
           <div class="absolute bottom-2 left-3 right-3 flex items-end justify-between z-10">
             <div class="flex items-center gap-1.5 min-w-0">
-              <span class="text-lg leading-none">${d.flag}</span>
+              ${getFlagIconHtml(d, "w-4 h-3 rounded-[2px] object-cover inline-block shadow-md")}
               <h3 class="text-sm font-extrabold text-white truncate drop-shadow-md">${d.city}</h3>
               <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${seasonBadgeClass}">
                 ${d.isOnPeak ? 'ON-PEAK' : 'OFF-PEAK'}
