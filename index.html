@@ -388,7 +388,7 @@
               oninput="handleAccommodationSliderChange(this.value)"
               class="sunset-slider w-full"
             />
-            <div class="flex justify-between text-[10px] text-slate-400 font-mono pt-0.5">
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono pt-1">
               <span>5★ Luxury</span>
               <span>4★</span>
               <span>3★</span>
@@ -416,11 +416,25 @@
           </div>
         </section>
 
-        <!-- 6. TRAVELLERS & TRIP DAYS (COMPACT, NO ACCORDION) -->
+        <!-- 6. TRAVELLERS, DURATION & START DATE (COMPACT, NO ACCORDION) -->
         <section class="space-y-2">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">Party &amp; Duration</label>
             <span id="party-duration-summary" class="text-xs font-mono font-bold text-pink-300">2 Adults • 1 Rm • 7d</span>
+          </div>
+
+          <!-- Start date picker row -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+            <label for="trip-start-date" class="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-orange-400"></i>
+              <span>Start Date</span>
+            </label>
+            <input
+              type="date"
+              id="trip-start-date"
+              onchange="handleStartDateChange(this.value)"
+              class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-xs font-mono font-bold text-white focus:outline-none focus:border-orange-500 cursor-pointer"
+            />
           </div>
 
           <div class="grid grid-cols-3 gap-2">

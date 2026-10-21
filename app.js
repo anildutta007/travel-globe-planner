@@ -830,7 +830,16 @@ function initVisitorCounter() {
   const badgeEl = document.getElementById('visitor-count-badge');
   if (!badgeEl) return;
 
-  const storageKey = 'dutta_planner_visitor_logged';
+  // Reset any old legacy inflated localStorage counters from previous builds
+  try {
+    const oldVal = parseInt(localStorage.getItem('dutta_local_visitor_count') || '0', 10);
+    if (oldVal > 500) {
+      localStorage.removeItem('dutta_local_visitor_count');
+      localStorage.removeItem('dutta_planner_visitor_logged');
+    }
+  } catch (e) {}
+
+  const storageKey = 'dutta_visitor_v2_logged';
   const isFirstVisit = !localStorage.getItem(storageKey);
   if (isFirstVisit) {
     try {
@@ -850,8 +859,8 @@ function initVisitorCounter() {
       badgeEl.textContent = visits.toLocaleString();
     })
     .catch(() => {
-      // Local fallback simulation with persistent localStorage
-      const localKey = 'dutta_local_visitor_count';
+      // Local fallback simulation with clean v2 localStorage
+      const localKey = 'dutta_visitor_v2_count';
       let count = parseInt(localStorage.getItem(localKey) || '1', 10);
       try {
         localStorage.setItem(localKey, String(count));
@@ -913,9 +922,18 @@ function updateFilterLabels() {
   const adultsEl = document.getElementById('adults-count-label');
   const childrenEl = document.getElementById('children-count-label');
   const travBadge = document.getElementById('travellers-summary-badge');
+  const partyDurationSummary = document.getElementById('party-duration-summary');
   if (adultsEl) adultsEl.textContent = state.adults;
   if (childrenEl) childrenEl.textContent = state.children;
   if (travBadge) travBadge.textContent = `${travLabel} • ${rooms} Room${rooms > 1 ? 's' : ''}`;
+  if (partyDurationSummary) {
+    partyDurationSummary.textContent = `${travLabel} • ${rooms} Rm • ${state.tripDays}d`;
+  }
+
+  const tripStartDateInput = document.getElementById('trip-start-date');
+  if (tripStartDateInput && state.startDate && tripStartDateInput.value !== state.startDate) {
+    tripStartDateInput.value = state.startDate;
+  }
 
   const dateRangeBadge = document.getElementById('date-range-summary-badge');
   if (dateRangeBadge) {
