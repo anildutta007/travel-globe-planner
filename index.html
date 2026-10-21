@@ -161,300 +161,376 @@
     <!-- ================= LEFT COLUMN: USER TRAVEL PREFERENCES DECK ================= -->
     <aside id="left-filter-panel" class="w-80 lg:w-96 bg-slate-900/95 border-r border-slate-800 flex flex-col h-full z-20 flex-shrink-0 overflow-y-auto">
       
-      <!-- Panel Header with Simple vs Advanced Mode Switcher -->
-      <div class="p-3.5 border-b border-slate-800/90 bg-slate-900/80 sticky top-0 z-10 backdrop-blur-md space-y-2.5">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-cyan-400"></i>
-            <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Trip Filters</h2>
+      <!-- Panel Header: Title & Departure/Currency Pill -->
+      <div class="p-4 border-b border-slate-800/80 bg-slate-900/90 sticky top-0 z-10 backdrop-blur-md space-y-3">
+        <!-- Main Headline inspired by mobile interface -->
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-white leading-tight">
+              Where's the sun <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-pink-500 to-rose-400">taking you?</span>
+            </h2>
+            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Find dream getaways tailored to your vibe &amp; budget</p>
           </div>
-          <button onclick="resetAllFilters()" class="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
-            <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
-            <span>Reset</span>
+          <button onclick="resetAllFilters()" title="Reset Filters" class="text-xs text-slate-400 hover:text-orange-400 transition p-1 rounded-lg hover:bg-slate-800">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
           </button>
         </div>
 
-        <!-- Mode Toggle: Simple vs Advanced -->
-        <div class="flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800 text-xs">
-          <button
-            type="button"
-            id="filter-mode-simple-btn"
-            onclick="setFilterMode('simple')"
-            class="flex-1 py-1 px-2 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-sm flex items-center justify-center gap-1.5 transition"
-          >
-            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-            <span>Simple Search</span>
-          </button>
-          <button
-            type="button"
-            id="filter-mode-adv-btn"
-            onclick="setFilterMode('advanced')"
-            class="flex-1 py-1 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition"
-          >
-            <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
-            <span>Advanced</span>
-          </button>
+        <!-- Sleek Floating Pill: From London LHR · GBP ⌄ -->
+        <div class="flex items-center justify-between bg-slate-950/80 border border-slate-700/80 hover:border-slate-600 rounded-full px-3 py-1.5 shadow-sm text-xs">
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-400 shrink-0"></i>
+            <span class="text-slate-400 text-[11px] shrink-0">From</span>
+            <select id="sidebar-origin-select" onchange="setOriginHub(this.value, true)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer truncate max-w-[125px]">
+              <!-- Populated by app.js grouped by region -->
+            </select>
+          </div>
+          <div class="h-3 w-px bg-slate-700 mx-1 shrink-0"></div>
+          <div class="flex items-center gap-1 shrink-0">
+            <select id="sidebar-currency-select" onchange="handleCurrencyChange(this.value)" class="bg-transparent text-amber-300 font-bold text-xs focus:outline-none cursor-pointer">
+              <!-- Populated by app.js -->
+            </select>
+            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+          </div>
         </div>
       </div>
 
-      <div class="p-3.5 space-y-3.5 flex-1">
+      <div class="p-4 space-y-5 flex-1">
 
-        <!-- ================= SIMPLE FILTERS (ALWAYS ENGAGING & VISIBLE) ================= -->
-
-        <!-- 1. STARTING POINT & CURRENCY (Clean & Compact) -->
-        <section class="bg-slate-950/70 border border-cyan-500/30 rounded-xl p-3 space-y-2.5 shadow-inner">
+        <!-- 1. VIBE / WEATHER SELECTOR (2x2 Visual Cards) -->
+        <section class="space-y-2.5">
           <div class="flex items-center justify-between">
-            <label class="text-xs font-bold text-white flex items-center gap-1.5">
-              <i data-lucide="plane-takeoff" class="w-4 h-4 text-cyan-400"></i>
-              <span>Fly From &amp; Currency</span>
+            <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span>Choose your vibe</span>
             </label>
-            <button type="button" onclick="focusOriginOnGlobe()" title="Center Globe on Departure Hub" class="text-[10px] font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 rounded">
-              <i data-lucide="locate-fixed" class="w-3 h-3"></i>
-              <span>Locate</span>
-            </button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <!-- Starting Airport Dropdown (Clean, Default London) -->
-            <div>
-              <label for="sidebar-origin-select" class="block text-[10px] text-slate-400 font-semibold mb-1">Departure City</label>
-              <select id="sidebar-origin-select" onchange="setOriginHub(this.value, true)" class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/50 rounded-lg px-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400 cursor-pointer">
-                <!-- Populated by app.js grouped by region -->
-              </select>
+            <!-- Hidden inputs so existing range logic stays intact -->
+            <div class="hidden">
+              <input type="range" id="min-temp-slider" min="-15" max="38" value="28" />
+              <input type="range" id="max-temp-slider" min="-10" max="42" value="42" />
+              <span id="min-temp-badge">28°C</span>
+              <span id="max-temp-badge">42°C</span>
             </div>
-
-            <!-- Currency Dropdown (Clean) -->
-            <div>
-              <label for="sidebar-currency-select" class="block text-[10px] text-slate-400 font-semibold mb-1">Currency</label>
-              <select id="sidebar-currency-select" onchange="handleCurrencyChange(this.value)" class="w-full bg-slate-900 border border-slate-700 hover:border-emerald-500/50 rounded-lg px-2 py-1.5 text-xs font-semibold text-emerald-300 focus:outline-none focus:border-emerald-400 cursor-pointer">
-                <!-- Populated by app.js -->
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <!-- 2. DESIRED TEMPERATURE -->
-        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-bold text-white flex items-center gap-1.5">
-              <i data-lucide="thermometer-sun" class="w-4 h-4 text-amber-400"></i>
-              <span>Ideal Temperature</span>
-            </label>
-            <div class="flex items-center gap-1 bg-slate-900 border border-slate-700 rounded-md p-0.5 text-[10px] font-mono">
+            <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-md p-0.5 text-[10px] font-mono">
               <button id="unit-c-btn" onclick="setTempUnit('C')" class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-bold">°C</button>
               <button id="unit-f-btn" onclick="setTempUnit('F')" class="px-1.5 py-0.5 rounded text-slate-400 hover:text-white">°F</button>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2">
-              <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                <span>Min</span>
-                <span id="min-temp-badge" class="font-mono text-amber-300 font-bold">16°C</span>
+          <div class="grid grid-cols-2 gap-2.5">
+            <!-- Beach Sun Card -->
+            <button
+              type="button"
+              id="vibe-card-beach"
+              onclick="selectVibe('beach')"
+              class="relative rounded-2xl overflow-hidden h-28 border border-amber-400 ring-2 ring-pink-500/80 shadow-lg text-left p-3 flex flex-col justify-between transition-all group scale-[1.02]"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80"
+                alt="Beach Sun"
+                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+              
+              <!-- Check badge -->
+              <div id="vibe-check-beach" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
+                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
               </div>
-              <input type="range" id="min-temp-slider" min="-15" max="38" value="16" oninput="syncTempSliders('min')" class="w-full" />
-            </div>
-            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2">
-              <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                <span>Max</span>
-                <span id="max-temp-badge" class="font-mono text-amber-300 font-bold">34°C</span>
-              </div>
-              <input type="range" id="max-temp-slider" min="-10" max="42" value="34" oninput="syncTempSliders('max')" class="w-full" />
-            </div>
-          </div>
 
-          <!-- Quick Presets -->
-          <div class="flex flex-wrap gap-1 pt-0.5">
-            <button onclick="applyTempPreset(-15, 42)" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">🌍 Any</button>
-            <button onclick="applyTempPreset(26, 36)" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition">🏝️ Tropical (26–36°)</button>
-            <button onclick="applyTempPreset(20, 28)" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 hover:bg-orange-500/25 text-orange-300 border border-orange-500/30 transition">☀️ Warm (20–28°)</button>
-            <button onclick="applyTempPreset(12, 21)" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition">🌤️ Mild (12–21°)</button>
+              <div class="relative z-10">
+                <div class="text-sm font-extrabold text-white leading-tight">Beach Sun</div>
+                <div class="text-[11px] font-bold text-amber-300 font-mono">28°+</div>
+              </div>
+            </button>
+
+            <!-- City Break Card -->
+            <button
+              type="button"
+              id="vibe-card-city"
+              onclick="selectVibe('city')"
+              class="relative rounded-2xl overflow-hidden h-28 border border-slate-800/80 shadow text-left p-3 flex flex-col justify-between transition-all group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=400&q=80"
+                alt="City Break"
+                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+
+              <div id="vibe-check-city" style="display: none;" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
+                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              </div>
+
+              <div class="relative z-10">
+                <div class="text-sm font-extrabold text-white leading-tight">City Break</div>
+                <div class="text-[11px] font-bold text-orange-300 font-mono">15–25°</div>
+              </div>
+            </button>
+
+            <!-- Mild & Green Card -->
+            <button
+              type="button"
+              id="vibe-card-mild"
+              onclick="selectVibe('mild')"
+              class="relative rounded-2xl overflow-hidden h-28 border border-slate-800/80 shadow text-left p-3 flex flex-col justify-between transition-all group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=400&q=80"
+                alt="Mild and Green"
+                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+
+              <div id="vibe-check-mild" style="display: none;" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
+                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              </div>
+
+              <div class="relative z-10">
+                <div class="text-sm font-extrabold text-white leading-tight">Mild &amp; Green</div>
+                <div class="text-[11px] font-bold text-emerald-300 font-mono">12–21°</div>
+              </div>
+            </button>
+
+            <!-- Snow Escape Card -->
+            <button
+              type="button"
+              id="vibe-card-snow"
+              onclick="selectVibe('snow')"
+              class="relative rounded-2xl overflow-hidden h-28 border border-slate-800/80 shadow text-left p-3 flex flex-col justify-between transition-all group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=400&q=80"
+                alt="Snow Escape"
+                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-black/20"></div>
+
+              <div id="vibe-check-snow" style="display: none;" class="relative z-10 w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white shadow">
+                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              </div>
+
+              <div class="relative z-10">
+                <div class="text-sm font-extrabold text-white leading-tight">Snow Escape</div>
+                <div class="text-[11px] font-bold text-cyan-300 font-mono">&lt;5°</div>
+              </div>
+            </button>
           </div>
         </section>
 
-        <!-- 3. TRAVEL MONTH (12-Month Selector) -->
-        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 space-y-2">
+        <!-- 2. MONTH SELECTOR (Clean pill grid matching screenshot) -->
+        <section class="space-y-2">
           <div class="flex items-center justify-between">
-            <label class="text-xs font-bold text-white flex items-center gap-1.5">
-              <i data-lucide="calendar-days" class="w-4 h-4 text-cyan-400"></i>
-              <span>Travel Month</span>
-            </label>
-            <span id="selected-month-label" class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded border border-cyan-500/30">October</span>
+            <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">When</label>
+            <span id="selected-month-label" class="text-xs font-bold text-orange-400">October</span>
           </div>
 
           <div id="month-grid" class="grid grid-cols-4 gap-1.5">
-            <!-- Populated by app.js (Jan - Dec) -->
+            <!-- Populated by app.js (Jan - Dec) with sunset-gradient active pill -->
           </div>
         </section>
 
-        <!-- 4. TOTAL BUDGET (FLIGHT + HOTEL) -->
-        <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 space-y-2">
+        <!-- 3. BUDGET (Sunset Gradient Track + formatted number + quick pills) -->
+        <section class="space-y-2.5">
           <div class="flex items-center justify-between">
-            <label class="text-xs font-bold text-white flex items-center gap-1.5">
-              <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
-              <span>Total Budget (Flight + Stay)</span>
-            </label>
-            <span id="budget-display-badge" class="text-xs font-mono font-extrabold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">£3,000</span>
+            <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">Budget</label>
+            <span id="budget-display-badge" class="text-base font-extrabold font-mono text-white">£3,000</span>
           </div>
 
-          <input type="range" id="budget-slider" min="300" max="15000" step="100" value="3000" oninput="setBudgetGBP(this.value)" class="w-full" />
+          <input
+            type="range"
+            id="budget-slider"
+            min="300"
+            max="15000"
+            step="100"
+            value="3000"
+            oninput="setBudgetGBP(this.value)"
+            class="sunset-slider"
+          />
 
-          <div class="flex items-center justify-between gap-1 pt-0.5">
-            <button onclick="setBudgetGBP(1200)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-1">£1,200</button>
-            <button onclick="setBudgetGBP(2500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-2">£2,500</button>
-            <button onclick="setBudgetGBP(4500)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-3">£4,500</button>
-            <button onclick="setBudgetGBP(8000)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" id="preset-budget-4">£8,000+</button>
+          <div class="flex items-center justify-between gap-1.5 pt-1">
+            <button onclick="setBudgetGBP(1200)" class="flex-1 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition" id="preset-budget-1">£1.2k</button>
+            <button onclick="setBudgetGBP(2500)" class="flex-1 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition" id="preset-budget-2">£2.5k</button>
+            <button onclick="setBudgetGBP(4500)" class="flex-1 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition" id="preset-budget-3">£4.5k</button>
+            <button onclick="setBudgetGBP(8000)" class="flex-1 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 transition" id="preset-budget-4">£8k+</button>
           </div>
         </section>
 
-        <!-- ================= ADVANCED FILTERS (COLLAPSIBLE / ACCORDION) ================= -->
-
-        <!-- Collapsible Toggle Bar for Advanced Options -->
-        <button
-          type="button"
-          id="advanced-filters-toggle-btn"
-          onclick="toggleAdvancedFilters()"
-          class="w-full py-2 px-3 rounded-xl border border-slate-800 bg-slate-950/50 hover:bg-slate-900 flex items-center justify-between text-xs font-bold text-slate-300 hover:text-white transition group"
-        >
-          <div class="flex items-center gap-2">
-            <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
-            <span>Advanced Trip Options</span>
-            <span class="text-[10px] font-normal text-slate-400 group-hover:text-slate-300">(Dates, Party &amp; Hotels)</span>
+        <!-- 4. TRAVELLERS CARD (👥 2 Adults · 1 Room with edit pencil) -->
+        <section class="space-y-2">
+          <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 hover:border-slate-700 rounded-xl p-3 shadow-sm transition">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center border border-pink-500/20">
+                <i data-lucide="users" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Travellers</div>
+                <div id="travellers-card-summary" class="text-xs font-bold text-white">2 Adults · 1 Room</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick="toggleAdvancedFilters()"
+              title="Edit Travellers"
+              class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center border border-slate-700 transition"
+            >
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
-          <i id="advanced-filters-chevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
-        </button>
+        </section>
 
-        <div id="advanced-filters-section" class="hidden space-y-3.5 pt-1">
-
-          <!-- A. TRIP DURATION & START DATE -->
-          <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 space-y-2.5">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-white flex items-center gap-1.5">
-                <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
-                <span>Duration &amp; Start Date</span>
-              </label>
-              <div class="flex items-center gap-1.5">
-                <button type="button" onclick="adjustTripDays(-1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
-                <span id="trip-days-badge" class="text-xs font-mono font-extrabold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded">7 Days</span>
-                <button type="button" onclick="adjustTripDays(1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
-              </div>
+        <!-- 5. MORE FILTERS ACCORDION -->
+        <section class="space-y-2">
+          <button
+            type="button"
+            id="advanced-filters-toggle-btn"
+            onclick="toggleAdvancedFilters()"
+            class="w-full py-2.5 px-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900/80 flex items-center justify-between text-xs font-bold text-slate-300 hover:text-white transition group"
+          >
+            <div class="flex items-center gap-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-orange-400"></i>
+              <span>More filters</span>
+              <span class="text-[10px] font-normal text-slate-400 group-hover:text-slate-300">(Dates, Party &amp; Hotels)</span>
             </div>
+            <i id="advanced-filters-chevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+          </button>
 
-            <input type="range" id="trip-days-slider" min="2" max="28" value="7" oninput="setTripDays(this.value)" class="w-full" />
-
-            <!-- Start Date Picker -->
-            <div class="pt-1.5 border-t border-slate-800/80 space-y-1.5">
-              <div class="flex items-center justify-between text-[11px]">
-                <span class="text-slate-300 font-semibold flex items-center gap-1">
-                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-400"></i>
-                  <span>Start Date:</span>
-                </span>
-                <span id="date-range-summary-badge" class="font-mono text-[10px] font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded">
-                  Returns: 17 Oct
-                </span>
-              </div>
-              <input
-                type="date"
-                id="trip-start-date"
-                onchange="handleStartDateChange(this.value)"
-                class="w-full bg-slate-900 border border-slate-700 hover:border-purple-500/50 rounded-lg px-2.5 py-1.5 text-xs font-mono font-semibold text-white focus:outline-none focus:border-purple-400 cursor-pointer"
-              />
-            </div>
-          </section>
-
-          <!-- B. NUMBER OF TRAVELLERS (ADULTS & CHILDREN) -->
-          <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 space-y-2.5">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-white flex items-center gap-1.5">
-                <i data-lucide="users" class="w-4 h-4 text-pink-400"></i>
-                <span>Travellers</span>
-              </label>
-              <span id="travellers-summary-badge" class="text-[10px] font-mono font-bold text-pink-300 bg-pink-500/15 border border-pink-500/30 px-2 py-0.5 rounded">2 Adults</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <!-- Adults Stepper -->
-              <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
-                <div>
-                  <div class="text-xs font-bold text-white">Adults</div>
-                  <div class="text-[10px] text-slate-400">Age 12+</div>
-                </div>
+          <div id="advanced-filters-section" class="hidden space-y-3 pt-1">
+            <!-- A. TRIP DURATION & START DATE -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-purple-400"></i>
+                  <span>Duration &amp; Start Date</span>
+                </label>
                 <div class="flex items-center gap-1.5">
-                  <button type="button" onclick="adjustTravellers('adults', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
-                  <span id="adults-count-label" class="w-4 text-center font-mono text-xs font-extrabold text-white">2</span>
-                  <button type="button" onclick="adjustTravellers('adults', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
+                  <button type="button" onclick="adjustTripDays(-1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
+                  <span id="trip-days-badge" class="text-xs font-mono font-extrabold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded">7 Days</span>
+                  <button type="button" onclick="adjustTripDays(1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
                 </div>
               </div>
 
-              <!-- Children Stepper -->
-              <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
-                <div>
-                  <div class="text-xs font-bold text-white">Children</div>
-                  <div class="text-[10px] text-slate-400">Age 2–11</div>
+              <input type="range" id="trip-days-slider" min="2" max="28" value="7" oninput="setTripDays(this.value)" class="w-full" />
+
+              <!-- Start Date Picker -->
+              <div class="pt-1.5 border-t border-slate-800/80 space-y-1.5">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-300 font-semibold flex items-center gap-1">
+                    <i data-lucide="calendar" class="w-3 h-3 text-purple-400"></i>
+                    <span>Start Date:</span>
+                  </span>
+                  <span id="date-range-summary-badge" class="font-mono text-[10px] font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded">
+                    Returns: 17 Oct
+                  </span>
                 </div>
-                <div class="flex items-center gap-1.5">
-                  <button type="button" onclick="adjustTravellers('children', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
-                  <span id="children-count-label" class="w-4 text-center font-mono text-xs font-extrabold text-pink-300">0</span>
-                  <button type="button" onclick="adjustTravellers('children', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
-                </div>
+                <input
+                  type="date"
+                  id="trip-start-date"
+                  onchange="handleStartDateChange(this.value)"
+                  class="w-full bg-slate-900 border border-slate-700 hover:border-purple-500/50 rounded-lg px-2.5 py-1.5 text-xs font-mono font-semibold text-white focus:outline-none focus:border-purple-400 cursor-pointer"
+                />
               </div>
             </div>
 
-            <!-- Quick Party Presets -->
-            <div class="flex items-center justify-between gap-1 pt-0.5">
-              <button type="button" onclick="setTravellerParty(1, 0)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Solo (1A)</button>
-              <button type="button" onclick="setTravellerParty(2, 0)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Couple (2A)</button>
-              <button type="button" onclick="setTravellerParty(2, 2)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Family (2A+2C)</button>
-            </div>
-          </section>
+            <!-- B. DETAILED TRAVELLERS STEPPERS -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i data-lucide="users" class="w-3.5 h-3.5 text-pink-400"></i>
+                  <span>Party Stepper</span>
+                </label>
+                <span id="travellers-summary-badge" class="text-[10px] font-mono font-bold text-pink-300 bg-pink-500/15 border border-pink-500/30 px-2 py-0.5 rounded">2 Adults</span>
+              </div>
 
-          <!-- C. CROWD & SEASONALITY -->
-          <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 space-y-2">
-            <div class="flex items-center justify-between">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+                  <div>
+                    <div class="text-xs font-bold text-white">Adults</div>
+                    <div class="text-[10px] text-slate-400">Age 12+</div>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="adjustTravellers('adults', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
+                    <span id="adults-count-label" class="w-4 text-center font-mono text-xs font-extrabold text-white">2</span>
+                    <button type="button" onclick="adjustTravellers('adults', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
+                  </div>
+                </div>
+
+                <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+                  <div>
+                    <div class="text-xs font-bold text-white">Children</div>
+                    <div class="text-[10px] text-slate-400">Age 2–11</div>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="adjustTravellers('children', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">-</button>
+                    <span id="children-count-label" class="w-4 text-center font-mono text-xs font-extrabold text-pink-300">0</span>
+                    <button type="button" onclick="adjustTravellers('children', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center border border-slate-700">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Party Presets -->
+              <div class="flex items-center justify-between gap-1 pt-0.5">
+                <button type="button" onclick="setTravellerParty(1, 0)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Solo (1A)</button>
+                <button type="button" onclick="setTravellerParty(2, 0)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Couple (2A)</button>
+                <button type="button" onclick="setTravellerParty(2, 2)" class="flex-1 py-1 rounded text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Family (2A+2C)</button>
+              </div>
+            </div>
+
+            <!-- C. SEASONALITY -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2">
               <label class="text-xs font-bold text-white flex items-center gap-1.5">
-                <i data-lucide="compass" class="w-4 h-4 text-rose-400"></i>
+                <i data-lucide="compass" class="w-3.5 h-3.5 text-rose-400"></i>
                 <span>Seasonality</span>
               </label>
+
+              <div class="grid grid-cols-3 gap-1.5">
+                <button id="season-btn-both" onclick="setSeasonFilter('both')" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-cyan-600 text-white border border-cyan-400 shadow transition text-center">
+                  All
+                </button>
+                <button id="season-btn-offpeak" onclick="setSeasonFilter('off-peak')" class="py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 hover:text-white border border-slate-800 transition text-center">
+                  Off-Peak
+                </button>
+                <button id="season-btn-onpeak" onclick="setSeasonFilter('on-peak')" class="py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 hover:text-white border border-slate-800 transition text-center">
+                  On-Peak
+                </button>
+              </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-1.5">
-              <button id="season-btn-both" onclick="setSeasonFilter('both')" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-cyan-600 text-white border border-cyan-400 shadow transition text-center">
-                All
-              </button>
-              <button id="season-btn-offpeak" onclick="setSeasonFilter('off-peak')" class="py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 hover:text-white border border-slate-800 transition text-center">
-                Off-Peak
-              </button>
-              <button id="season-btn-onpeak" onclick="setSeasonFilter('on-peak')" class="py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 hover:text-white border border-slate-800 transition text-center">
-                On-Peak
-              </button>
-            </div>
-          </section>
+            <!-- D. ACCOMMODATION PREFERENCE -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <i data-lucide="hotel" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>Accommodation Types</span>
+                </label>
+                <button onclick="selectAllAccommodationTiers()" class="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline">
+                  Select All
+                </button>
+              </div>
 
-          <!-- D. ACCOMMODATION PREFERENCE -->
-          <section class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-white flex items-center gap-1.5">
-                <i data-lucide="hotel" class="w-4 h-4 text-amber-400"></i>
-                <span>Accommodation Types</span>
+              <div id="accommodation-checkbox-grid" class="grid grid-cols-2 gap-2">
+                <!-- Populated by app.js -->
+              </div>
+            </div>
+
+            <!-- E. STRICT BUDGET TOGGLE -->
+            <div class="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">
+              <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                <span>Strictly hide locations over budget</span>
+                <input type="checkbox" id="strict-budget-toggle" checked onchange="handleFilterChange()" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
               </label>
-              <button onclick="selectAllAccommodationTiers()" class="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline">
-                Select All
-              </button>
             </div>
-
-            <div id="accommodation-checkbox-grid" class="grid grid-cols-2 gap-2">
-              <!-- Populated by app.js -->
-            </div>
-          </section>
-
-          <!-- E. STRICT BUDGET TOGGLE -->
-          <div class="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">
-            <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
-              <span>Strictly hide locations over budget</span>
-              <input type="checkbox" id="strict-budget-toggle" checked onchange="handleFilterChange()" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
-            </label>
           </div>
+        </section>
 
+        <!-- 6. VIBRANT SUNSET CTA BUTTON: Find my holiday → -->
+        <div class="pt-2">
+          <button
+            type="button"
+            onclick="executeHolidaySearch()"
+            class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-500 via-pink-500 to-rose-500 hover:from-orange-600 hover:via-pink-600 hover:to-rose-600 text-white font-extrabold text-sm shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]"
+          >
+            <span>Find my holiday</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 stroke-[2.5]"></i>
+          </button>
         </div>
 
       </div>

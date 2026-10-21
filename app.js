@@ -14,6 +14,7 @@ const state = {
   startDate: '', // YYYY-MM-DD
   endDate: '',   // YYYY-MM-DD
   tripDays: 7,
+  selectedVibe: 'beach', // 'beach' | 'city' | 'mild' | 'snow' | 'any'
   adults: 2,
   children: 0,
   budgetGBP: 3000,
@@ -75,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDefaultDates();
   initMonthGrid();
   initAccommodationCheckboxes();
+  updateVibeCardsUI();
   updateFilterLabels();
   initVisitorCounter();
   init3DGlobe();
@@ -158,12 +160,13 @@ function initMonthGrid() {
     const isSelected = m.index === state.monthIndex;
     return `
       <button
+        type="button"
         onclick="selectMonth(${m.index})"
         id="month-btn-${m.index}"
-        class="py-1.5 px-1 rounded-lg text-[11px] font-bold transition border ${
+        class="py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center ${
           isSelected
-            ? 'bg-cyan-600 text-white border-cyan-400 shadow-md shadow-cyan-500/20'
-            : 'bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-800'
+            ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg shadow-pink-500/30 ring-1 ring-white/30 scale-[1.02]'
+            : 'bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800'
         }"
       >
         ${m.short}
@@ -416,12 +419,73 @@ function syncTempSliders(changed) {
   handleFilterChange();
 }
 
-function applyTempPreset(minC, maxC) {
+function applyTempPreset(minC, maxC, vibe = null) {
   state.minTempC = minC;
   state.maxTempC = maxC;
-  document.getElementById('min-temp-slider').value = minC;
-  document.getElementById('max-temp-slider').value = maxC;
+  if (vibe) {
+    state.selectedVibe = vibe;
+  }
+  const minSlider = document.getElementById('min-temp-slider');
+  const maxSlider = document.getElementById('max-temp-slider');
+  if (minSlider) minSlider.value = minC;
+  if (maxSlider) maxSlider.value = maxC;
+  updateVibeCardsUI();
   handleFilterChange();
+}
+
+function selectVibe(vibeKey) {
+  state.selectedVibe = vibeKey;
+  if (vibeKey === 'beach') {
+    state.minTempC = 28;
+    state.maxTempC = 42;
+  } else if (vibeKey === 'city') {
+    state.minTempC = 15;
+    state.maxTempC = 25;
+  } else if (vibeKey === 'mild') {
+    state.minTempC = 12;
+    state.maxTempC = 21;
+  } else if (vibeKey === 'snow') {
+    state.minTempC = -15;
+    state.maxTempC = 5;
+  }
+  const minSlider = document.getElementById('min-temp-slider');
+  const maxSlider = document.getElementById('max-temp-slider');
+  if (minSlider) minSlider.value = state.minTempC;
+  if (maxSlider) maxSlider.value = state.maxTempC;
+  updateVibeCardsUI();
+  handleFilterChange();
+}
+
+function executeHolidaySearch() {
+  // Center or highlight the top matching destination or scroll results into view
+  const matches = (window.evaluatedDestinations || []).filter(d => d.passesFilters);
+  if (matches.length > 0) {
+    const top = matches[0];
+    focusGlobeOnDestination(top.id);
+    showNotification(`Found ${matches.length} matching destinations! Focused on ${top.city}.`, 'success');
+  } else {
+    showNotification('No destinations matched all criteria. Try adjusting your budget or vibe!', 'warning');
+  }
+}
+
+function updateVibeCardsUI() {
+  const vibes = ['beach', 'city', 'mild', 'snow'];
+  vibes.forEach(v => {
+    const card = document.getElementById(`vibe-card-${v}`);
+    const check = document.getElementById(`vibe-check-${v}`);
+    if (card) {
+      if (state.selectedVibe === v) {
+        card.classList.remove('border-slate-800/80', 'ring-0', 'scale-100');
+        card.classList.add('border-amber-400', 'ring-2', 'ring-pink-500/80', 'scale-[1.02]');
+      } else {
+        card.classList.add('border-slate-800/80', 'scale-100');
+        card.classList.remove('border-amber-400', 'ring-2', 'ring-pink-500/80', 'scale-[1.02]');
+      }
+    }
+    if (check) {
+      check.style.display = state.selectedVibe === v ? 'flex' : 'none';
+    }
+  });
 }
 
 function setTempUnit(unit) {
@@ -641,7 +705,11 @@ function toggleAdvancedFilters() {
 function setBudgetGBP(val) {
   state.budgetGBP = Math.max(200, Math.min(25000, parseInt(val, 10) || 3000));
   const slider = document.getElementById('budget-slider');
-  if (slider) slider.value = Math.min(15000, Math.max(300, state.budgetGBP));
+  if (slider) {
+    slider.value = Math.min(15000, Math.max(300, state.budgetGBP));
+    const percent = Math.min(100, Math.max(0, ((state.budgetGBP - 300) / (15000 - 300)) * 100));
+    slider.style.background = `linear-gradient(90deg, #f97316 0%, #ec4899 ${percent}%, #1e293b ${percent}%)`;
+  }
   handleFilterChange();
 }
 
@@ -785,11 +853,28 @@ function updateFilterLabels() {
   const origin = getOriginHub();
   const curr = CURRENCIES[state.currency] || CURRENCIES.GBP;
 
-  document.getElementById('min-temp-badge').textContent = formatTemp(state.minTempC);
-  document.getElementById('max-temp-badge').textContent = formatTemp(state.maxTempC);
-  document.getElementById('selected-month-label').textContent = monthMeta.full;
-  document.getElementById('trip-days-badge').textContent = `${state.tripDays} Days`;
-  document.getElementById('budget-display-badge').textContent = formatMoney(state.budgetGBP);
+  const minBadge = document.getElementById('min-temp-badge');
+  if (minBadge) minBadge.textContent = formatTemp(state.minTempC);
+  const maxBadge = document.getElementById('max-temp-badge');
+  if (maxBadge) maxBadge.textContent = formatTemp(state.maxTempC);
+  const monthLbl = document.getElementById('selected-month-label');
+  if (monthLbl) monthLbl.textContent = monthMeta.full;
+  const tripDaysBadge = document.getElementById('trip-days-badge');
+  if (tripDaysBadge) tripDaysBadge.textContent = `${state.tripDays} Days`;
+  const budgetBadge = document.getElementById('budget-display-badge');
+  if (budgetBadge) budgetBadge.textContent = formatMoney(state.budgetGBP);
+
+  const travellersCardLabel = document.getElementById('travellers-card-summary');
+  if (travellersCardLabel) {
+    travellersCardLabel.textContent = `${travLabel} • ${rooms} Room${rooms > 1 ? 's' : ''}`;
+  }
+
+  // Update budget slider gradient
+  const budgetSlider = document.getElementById('budget-slider');
+  if (budgetSlider) {
+    const percent = Math.min(100, Math.max(0, ((state.budgetGBP - 300) / (15000 - 300)) * 100));
+    budgetSlider.style.background = `linear-gradient(90deg, #f97316 0%, #ec4899 ${percent}%, #1e293b ${percent}%)`;
+  }
 
   const originBadge = document.getElementById('sidebar-origin-iata-badge');
   if (originBadge && origin) {
