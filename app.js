@@ -106,7 +106,7 @@ function initOriginHubSelect() {
     sidebarSelect.innerHTML = regions.map(region => {
       const hubsInRegion = DEPARTURE_HUBS.filter(h => (h.region || 'Global') === region);
       const optionsHtml = hubsInRegion.map(hub =>
-        `<option value="${hub.id}" ${hub.id === state.originHubId ? 'selected' : ''}>${hub.flag} ${hub.name}</option>`
+        `<option value="${hub.id}" ${hub.id === state.originHubId ? 'selected' : ''}>${hub.flag} ${hub.city} (${hub.iata})</option>`
       ).join('');
       return `<optgroup label="${region}">${optionsHtml}</optgroup>`;
     }).join('');
@@ -127,7 +127,7 @@ function initCurrencySelects() {
   if (sidebarCurr) {
     sidebarCurr.innerHTML = currKeys.map(code => {
       const c = CURRENCIES[code];
-      return `<option value="${code}" ${code === state.currency ? 'selected' : ''}>${c.flag || ''} ${c.name}</option>`;
+      return `<option value="${code}" ${code === state.currency ? 'selected' : ''}>${c.flag || ''} ${c.code} (${c.symbol.trim()})</option>`;
     }).join('');
   }
 

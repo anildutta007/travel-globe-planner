@@ -347,6 +347,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7) !important;
 }
 
+/* Custom Select styling to prevent OS default white popup background & clipping */
+select option,
+select optgroup {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+select optgroup {
+  font-weight: 700;
+  color: #fb923c !important;
+}
+
 /* Print Friendly Itinerary */
 @media print {
   body {
