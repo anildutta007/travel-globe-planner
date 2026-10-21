@@ -560,27 +560,22 @@ function handleStartDateChange(dateVal) {
   handleFilterChange();
 }
 
-function setQuickStartDate(preset) {
-  const today = new Date();
-  let start = new Date(today);
+function handleMonthSliderChange(val) {
+  const idx = Math.max(0, Math.min(11, parseInt(val, 10) || 0));
+  selectMonth(idx);
+}
 
-  if (preset === 'today') {
-    start = new Date(today);
-  } else if (preset === 'next-weekend') {
-    // Next Saturday
-    const day = today.getDay();
-    const daysUntilSat = (6 - day + 7) % 7 || 7;
-    start.setDate(today.getDate() + daysUntilSat);
-  } else if (preset === 'first-of-month') {
-    // 1st of the currently selected month
-    let year = today.getFullYear();
-    if (state.monthIndex < today.getMonth()) {
-      year += 1;
-    }
-    start = new Date(year, state.monthIndex, 1);
-  }
-
-  handleStartDateChange(formatDateISO(start));
+function handleAccommodationSliderChange(val) {
+  const index = Math.max(0, Math.min(3, parseInt(val, 10) || 0));
+  const tierIds = ['5star', '4star', '3star', 'airbnb'];
+  const labels = ['5★ Luxury', '4★ Boutique', '3★ Comfort', 'Rental / Airbnb'];
+  const chosenTier = tierIds[index];
+  
+  state.selectedAccommodations = [chosenTier];
+  const labelEl = document.getElementById('accommodation-tier-label');
+  if (labelEl) labelEl.textContent = labels[index];
+  
+  handleFilterChange();
 }
 
 function selectMonth(index) {
@@ -600,6 +595,16 @@ function selectMonth(index) {
 
   const startInput = document.getElementById('trip-start-date');
   if (startInput) startInput.value = state.startDate;
+
+  const monthSlider = document.getElementById('month-slider');
+  if (monthSlider && parseInt(monthSlider.value, 10) !== index) {
+    monthSlider.value = index;
+  }
+
+  const monthLabel = document.getElementById('selected-month-label');
+  if (monthLabel) {
+    monthLabel.textContent = MONTHS_META[index].full;
+  }
 
   initMonthGrid();
   handleFilterChange();
@@ -848,7 +853,6 @@ function initVisitorCounter() {
       // Local fallback simulation with persistent localStorage
       const localKey = 'dutta_local_visitor_count';
       let count = parseInt(localStorage.getItem(localKey) || '1', 10);
-      count += 1;
       try {
         localStorage.setItem(localKey, String(count));
       } catch (e) {}
@@ -1519,7 +1523,7 @@ function setSortTab(tabKey) {
     if (sortSelect) sortSelect.value = 'total_asc';
   } else if (tabKey === 'cheapest') {
     if (btnCheap) btnCheap.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow-md transition text-center';
-    if (sortSelect) sortSelect.value = 'flight_asc';
+    if (sortSelect) sortSelect.value = 'total_asc';
   } else if (tabKey === 'warmest') {
     if (btnWarm) btnWarm.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow-md transition text-center';
     if (sortSelect) sortSelect.value = 'temp_desc';
