@@ -584,53 +584,92 @@
         <div id="leaflet-map" class="w-full h-full hidden absolute inset-0 z-10"></div>
       </div>
 
-      <!-- Bottom Floating Legend & Helper Bar -->
-      <div class="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-        <div class="bg-slate-900/90 backdrop-blur-md border border-slate-800 px-3.5 py-2 rounded-xl shadow-xl flex flex-wrap items-center gap-4 text-[11px] pointer-events-auto">
-          <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#10b981]"></span>
-            <span class="text-slate-200 font-semibold">Matches Weather &amp; Budget</span>
+      <!-- Bottom Floating Stats Capsule Pill (Matches screenshot) -->
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+        <div class="flex items-center gap-3 sm:gap-4 bg-slate-950/85 backdrop-blur-xl border border-slate-700/80 px-4 py-2 rounded-full shadow-2xl text-xs">
+          <!-- Matches count -->
+          <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
+            <div class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            </div>
+            <div>
+              <span id="globe-bottom-matches-count" class="font-extrabold text-white font-mono text-sm">--</span>
+              <span class="text-[10px] text-slate-400 block -mt-0.5">matches</span>
+            </div>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_#f59e0b]"></span>
-            <span class="text-slate-300">Matches Weather (Above Budget)</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_10px_#60a5fa]"></span>
-            <span class="text-slate-300">Departure Airport Hub</span>
-          </div>
-        </div>
 
-        <div class="bg-slate-900/90 backdrop-blur-md border border-slate-800 px-3.5 py-2 rounded-xl shadow-xl text-[11px] text-cyan-300 font-medium pointer-events-auto flex items-center gap-1.5">
-          <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i>
-          <span>Click any glowing location on the globe to inspect Flight + Hotel costs, generate an AI Itinerary &amp; book!</span>
+          <!-- Cheapest -->
+          <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
+            <span class="text-base">🪙</span>
+            <div>
+              <span class="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Cheapest</span>
+              <span id="globe-bottom-cheapest-price" class="font-mono font-extrabold text-amber-300 text-xs">--</span>
+            </div>
+          </div>
+
+          <!-- Warmest -->
+          <div class="flex items-center gap-2">
+            <span class="text-base">☀️</span>
+            <div>
+              <span class="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Warmest</span>
+              <span id="globe-bottom-warmest-temp" class="font-mono font-extrabold text-orange-400 text-xs">--</span>
+            </div>
+          </div>
         </div>
       </div>
 
     </main>
 
-    <!-- ================= RIGHT COLUMN: LIT-UP LOCATIONS & COST BREAKDOWN LIST ================= -->
+    <!-- ================= RIGHT COLUMN: TOP PICKS FOR YOU ================= -->
     <aside id="right-matches-column" class="w-80 lg:w-96 bg-slate-900/95 border-l border-slate-800 flex flex-col h-full z-20 flex-shrink-0">
       
-      <!-- Matches Header & Sort -->
-      <div class="p-3.5 border-b border-slate-800 space-y-2.5 bg-slate-900/90">
+      <!-- Top Picks Header & Filter Tabs -->
+      <div class="p-4 border-b border-slate-800/80 space-y-3 bg-slate-900/90 backdrop-blur-md">
         <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-xs font-extrabold uppercase tracking-wider text-white flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span id="matches-count-heading">Matching Destinations</span>
-            </h2>
-            <p id="matches-subtitle" class="text-[11px] text-slate-400">
-              Showing Flight + Hotel costs for your selection
-            </p>
+          <div class="flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
+            <h2 class="text-sm font-extrabold text-white tracking-tight">Top picks for you</h2>
           </div>
-          <select id="sort-select" onchange="renderMatchingDestinationsList()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200 font-semibold focus:outline-none cursor-pointer">
-            <option value="total_asc">Price: Low to High</option>
-            <option value="temp_desc">Warmest First</option>
-            <option value="temp_asc">Coolest First</option>
-            <option value="flight_asc">Cheapest Flight</option>
-          </select>
+          <span id="matches-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+            -- picks
+          </span>
         </div>
+
+        <!-- 3 Segmented Pill Filter Buttons: Best value | Cheapest | Warmest -->
+        <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          <button
+            type="button"
+            id="tab-sort-value"
+            onclick="setSortTab('value')"
+            class="flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow-md transition text-center"
+          >
+            Best value
+          </button>
+          <button
+            type="button"
+            id="tab-sort-cheapest"
+            onclick="setSortTab('cheapest')"
+            class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition text-center"
+          >
+            Cheapest
+          </button>
+          <button
+            type="button"
+            id="tab-sort-warmest"
+            onclick="setSortTab('warmest')"
+            class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition text-center"
+          >
+            Warmest
+          </button>
+        </div>
+
+        <!-- Hidden select to keep existing backend handlers synchronized -->
+        <select id="sort-select" onchange="renderMatchingDestinationsList()" class="hidden">
+          <option value="total_asc" selected>Price: Low to High</option>
+          <option value="temp_desc">Warmest First</option>
+          <option value="temp_asc">Coolest First</option>
+          <option value="flight_asc">Cheapest Flight</option>
+        </select>
 
         <!-- Quick Search Filter inside Matching Destinations -->
         <div class="relative">
@@ -639,15 +678,27 @@
             type="text"
             id="dest-search-input"
             oninput="handleFilterChange()"
-            placeholder="Filter city, country or vibe (e.g. beach, food)..."
-            class="w-full bg-slate-950/90 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            placeholder="Search destination, country or vibe..."
+            class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
           />
         </div>
       </div>
 
       <!-- Scrollable Destination Cards Container -->
-      <div id="matching-destinations-list" class="flex-1 overflow-y-auto p-3 space-y-2.5">
-        <!-- Dynamically rendered by app.js -->
+      <div id="matching-destinations-list" class="flex-1 overflow-y-auto p-3 space-y-3">
+        <!-- Dynamically rendered by app.js with photographic cards -->
+      </div>
+
+      <!-- Sticky Bottom Action Button: Compare picks -->
+      <div class="p-3 border-t border-slate-800/80 bg-slate-900/90 backdrop-blur-md">
+        <button
+          type="button"
+          onclick="openComparisonModal()"
+          class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-rose-500 hover:from-orange-600 hover:via-pink-600 hover:to-rose-600 text-white font-extrabold text-xs shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 transition transform active:scale-[0.98]"
+        >
+          <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+          <span id="compare-button-text">Compare top picks</span>
+        </button>
       </div>
     </aside>
 

@@ -1007,11 +1007,12 @@ function init3DGlobe() {
       .arcEndLat('endLat')
       .arcEndLng('endLng')
       .arcColor('color')
-      .arcDashLength(0.45)
-      .arcDashGap(0.25)
+      .arcAltitude(d => d.altitude || 0.25)
+      .arcDashLength(0.5)
+      .arcDashGap(0.2)
       .arcDashInitialGap(() => Math.random())
-      .arcDashAnimateTime(2200)
-      .arcStroke(0.55)
+      .arcDashAnimateTime(1800)
+      .arcStroke(0.7)
       .arcsTransitionDuration(0)
       // Interactive Floating HTML Badges Showing Flag, City, Temp, Flight Cost + Hotel Cost
       .htmlElementsData([])
@@ -1051,8 +1052,9 @@ function createGlobePinElement(d) {
 
   if (d.isOrigin) {
     wrapper.innerHTML = `
-      <div class="globe-pin-origin">
-        🛫 ${d.flag} ${d.city} (${d.iata})
+      <div class="globe-pin-origin flex items-center gap-1.5 shadow-lg shadow-cyan-500/30">
+        <span class="text-sm">🇬🇧</span>
+        <span>${d.city} (${d.iata})</span>
       </div>
     `;
     return wrapper;
@@ -1060,29 +1062,20 @@ function createGlobePinElement(d) {
 
   const isSelected = state.selectedDestinationId === d.id;
   const tier = d.primaryTier;
-  const seasonLabel = d.isOnPeak ? 'On-Peak' : 'Off-Peak';
-  const seasonBadgeColor = d.isOnPeak ? 'text-amber-300' : 'text-emerald-300';
 
+  // Clean pill presentation matching the new screenshot
   wrapper.innerHTML = `
     <div class="globe-pin-card ${isSelected ? 'pin-selected' : ''} ${!d.matchesBudget ? 'pin-over-budget' : ''}">
-      <div class="flex items-center justify-between gap-2 text-[11px] font-extrabold leading-tight">
-        <span class="truncate max-w-[125px]">${d.flag} ${d.city.split('(')[0].split('&')[0].trim()}</span>
-        <span class="font-mono text-amber-300">${formatTemp(d.tempC)}</span>
+      <div class="flex items-center gap-1.5 text-xs font-extrabold leading-tight">
+        <span class="text-sm shrink-0">${d.flag}</span>
+        <span class="truncate max-w-[110px] text-white">${d.city.split('(')[0].split('&')[0].trim()}</span>
       </div>
-      <div class="flex items-center justify-between gap-1.5 text-[10px] font-mono leading-tight">
-        <span class="text-slate-400">${tier.shortLabel}</span>
-        <span class="font-extrabold ${d.matchesBudget ? 'text-emerald-400' : 'text-amber-400'}">${formatMoney(tier.combinedTotalGBP)}</span>
-      </div>
-      <div class="globe-pin-details flex-col gap-1 pt-1 mt-0.5 border-t border-slate-700/70">
-        <div class="flex items-center justify-between gap-1.5 text-[10px] font-mono text-slate-200 leading-tight">
-          <span>✈️ ${formatMoney(d.flightCostGBP)}</span>
-          <span>+</span>
-          <span>🏨 ${formatMoney(tier.hotelTotalGBP)}</span>
-        </div>
-        <div class="flex items-center justify-between gap-1 text-[9px] leading-tight">
-          <span class="font-bold ${seasonBadgeColor}">${seasonLabel}</span>
-          <span class="text-cyan-300">Click for Itinerary →</span>
-        </div>
+      <div class="flex items-center justify-between gap-1.5 text-[10px] font-mono leading-tight pt-0.5">
+        <span class="text-amber-300 font-semibold flex items-center gap-0.5">
+          <span>⛅</span>
+          <span>${formatTemp(d.tempC)}</span>
+        </span>
+        <span class="font-bold ${d.matchesBudget ? 'text-cyan-300' : 'text-amber-300'}">${formatMoney(tier.combinedTotalGBP)}</span>
       </div>
     </div>
     <div class="globe-pin-stem"></div>
@@ -1178,9 +1171,10 @@ function updateGlobeVisualization() {
     startLng: origin.lng,
     endLat: d.lat,
     endLng: d.lng,
+    altitude: Math.min(0.35, Math.max(0.12, (d.distanceKm || 2000) / 18000)),
     color: d.matchesBudget
-      ? ['rgba(56, 189, 248, 0.75)', 'rgba(16, 185, 129, 0.95)']
-      : ['rgba(56, 189, 248, 0.55)', 'rgba(245, 158, 11, 0.85)']
+      ? ['rgba(56, 189, 248, 0.95)', 'rgba(56, 189, 248, 0.85)']
+      : ['rgba(56, 189, 248, 0.65)', 'rgba(245, 158, 11, 0.75)']
   }));
 
   const validPinIds = new Set(points.map(p => String(p.id)));
@@ -1403,17 +1397,92 @@ function update2DMapVisualization() {
   });
 }
 
+// Curated high-resolution landscape photography for top destination cards
+const DESTINATION_HERO_PHOTOS = {
+  barcelona: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=600&q=80', // Sagrada Familia sunset
+  nice: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80', // Cote d'Azur / Promenade
+  lisbon: 'https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=600&q=80', // Lisbon red roofs
+  geneva: 'https://images.unsplash.com/photo-1574873215043-44119461cb3b?auto=format&fit=crop&w=600&q=80', // Geneva lake & mountains
+  rome: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80', // Colosseum sunset
+  paris: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=600&q=80', // Eiffel / Seine
+  marrakech: 'https://images.unsplash.com/photo-1597212618440-806262de4f6b?auto=format&fit=crop&w=600&q=80', // Marrakech Riad
+  dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=600&q=80', // Dubai skyline
+  istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=600&q=80', // Hagia Sophia sunset
+  newyork: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=80', // Manhattan skyline
+  capetown: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=600&q=80', // Table mountain
+  tokyo: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80', // Tokyo tower
+  singapore: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=600&q=80', // Marina Bay
+  sydney: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=600&q=80', // Opera house
+  seville: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=600&q=80', // Plaza de Espana
+  amsterdam: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=600&q=80', // Canal
+  default: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&q=80'
+};
+
+function getDestinationPhoto(id) {
+  return DESTINATION_HERO_PHOTOS[id] || DESTINATION_HERO_PHOTOS.default;
+}
+
+function setSortTab(tabKey) {
+  const sortSelect = document.getElementById('sort-select');
+  const btnVal = document.getElementById('tab-sort-value');
+  const btnCheap = document.getElementById('tab-sort-cheapest');
+  const btnWarm = document.getElementById('tab-sort-warmest');
+
+  [btnVal, btnCheap, btnWarm].forEach(btn => {
+    if (btn) {
+      btn.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition text-center';
+    }
+  });
+
+  if (tabKey === 'value') {
+    if (btnVal) btnVal.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow-md transition text-center';
+    if (sortSelect) sortSelect.value = 'total_asc';
+  } else if (tabKey === 'cheapest') {
+    if (btnCheap) btnCheap.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow-md transition text-center';
+    if (sortSelect) sortSelect.value = 'flight_asc';
+  } else if (tabKey === 'warmest') {
+    if (btnWarm) btnWarm.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow-md transition text-center';
+    if (sortSelect) sortSelect.value = 'temp_desc';
+  }
+
+  renderMatchingDestinationsList();
+}
+
+function openComparisonModal() {
+  const matches = computedDestinations.filter(d => d.isLitUp);
+  if (matches.length > 0) {
+    openDestinationModal(matches[0].id);
+    showNotification(`Opened top recommendation (${matches[0].city}) for detailed comparison`, 'info');
+  } else {
+    showNotification('No destinations match current filters. Adjust your budget or month!', 'warning');
+  }
+}
+
 // ============================================================================
 // RIGHT SIDEBAR: MATCHING DESTINATIONS LIST & ACCOMMODATION BREAKDOWN
 // ============================================================================
 function renderMatchingDestinationsList() {
   const listEl = document.getElementById('matching-destinations-list');
-  const countHeading = document.getElementById('matches-count-heading');
-  const subtitle = document.getElementById('matches-subtitle');
+  const countBadge = document.getElementById('matches-count-badge');
   const sortMode = (document.getElementById('sort-select') || {}).value || 'total_asc';
   const searchQuery = ((document.getElementById('dest-search-input') || {}).value || '').trim().toLowerCase();
 
   let matches = computedDestinations.filter(d => d.isLitUp);
+
+  // Update bottom floating stats on the globe
+  const globeMatchesCount = document.getElementById('globe-bottom-matches-count');
+  const globeCheapest = document.getElementById('globe-bottom-cheapest-price');
+  const globeWarmest = document.getElementById('globe-bottom-warmest-temp');
+  if (globeMatchesCount) globeMatchesCount.textContent = matches.length;
+  if (matches.length > 0) {
+    const minPrice = Math.min(...matches.map(m => m.primaryTier.combinedTotalGBP));
+    const maxTemp = Math.max(...matches.map(m => m.tempC));
+    if (globeCheapest) globeCheapest.textContent = formatMoney(minPrice);
+    if (globeWarmest) globeWarmest.textContent = formatTemp(maxTemp);
+  } else {
+    if (globeCheapest) globeCheapest.textContent = '--';
+    if (globeWarmest) globeWarmest.textContent = '--';
+  }
 
   if (searchQuery) {
     matches = matches.filter(d =>
@@ -1433,13 +1502,15 @@ function renderMatchingDestinationsList() {
     return 0;
   });
 
-  const monthName = MONTHS_META[state.monthIndex].full;
-  countHeading.textContent = `${matches.length} Locations Lit Up on Globe`;
-  subtitle.textContent = `${monthName} • ${state.tripDays} Days • ${getTravellersLabel(false)}`;
+  if (countBadge) countBadge.textContent = `${matches.length} picks`;
+  const compareBtnText = document.getElementById('compare-button-text');
+  if (compareBtnText) {
+    compareBtnText.textContent = matches.length > 0 ? `Compare ${Math.min(4, matches.length)} picks` : 'Compare picks';
+  }
 
   if (matches.length === 0) {
     listEl.innerHTML = `
-      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 text-center space-y-3 my-4">
+      <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 text-center space-y-3 my-4">
         <div class="w-10 h-10 rounded-full bg-amber-500/15 text-amber-300 flex items-center justify-center mx-auto">
           <i data-lucide="compass" class="w-5 h-5"></i>
         </div>
@@ -1456,78 +1527,71 @@ function renderMatchingDestinationsList() {
     return;
   }
 
-  listEl.innerHTML = matches.map(d => {
+  listEl.innerHTML = matches.map((d, index) => {
     const tier = d.primaryTier;
-    const seasonBadge = d.isOnPeak
-      ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-500/15 text-amber-300 border border-amber-500/30">On-Peak</span>`
-      : `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Off-Peak</span>`;
-
-    // Show mini pills for all user-selected accommodation tiers
-    const allSelectedTiersPills = d.selectedTierObjs.map(t => {
-      const fits = t.withinBudget;
-      return `
-        <div class="px-2 py-1 rounded-lg bg-slate-900 border ${fits ? 'border-slate-800 text-slate-200' : 'border-amber-500/30 text-amber-300/80'} flex items-center justify-between text-[10px]">
-          <span class="font-semibold">${t.shortLabel}</span>
-          <span class="font-mono font-bold ${fits ? 'text-emerald-300' : 'text-amber-300'}">${formatMoney(t.combinedTotalGBP)}</span>
-        </div>
-      `;
-    }).join('');
+    const isTopRanked = index === 0;
+    const photoUrl = getDestinationPhoto(d.id);
+    const seasonBadgeClass = d.isOnPeak
+      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
 
     return `
       <div
         onclick="openDestinationModal('${d.id}')"
-        class="group bg-slate-950/85 hover:bg-slate-900 border ${
-          d.matchesBudget ? 'border-slate-800 hover:border-emerald-500/60' : 'border-amber-500/30 hover:border-amber-400'
-        } rounded-xl p-3 cursor-pointer transition-all shadow-sm hover:shadow-lg space-y-2.5"
+        class="group relative rounded-2xl overflow-hidden border ${
+          isTopRanked
+            ? 'border-orange-500/90 ring-1 ring-pink-500/80 shadow-lg shadow-pink-500/15'
+            : 'border-slate-800 hover:border-slate-700 bg-slate-950/90'
+        } cursor-pointer transition-all hover:scale-[1.01] flex flex-col"
       >
-        <!-- Top Row: City, Country, Season & Temp -->
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-xl leading-none flex-shrink-0">${d.flag}</span>
-            <div class="min-w-0">
-              <h3 class="text-xs font-extrabold text-white group-hover:text-cyan-300 transition truncate">${d.city}</h3>
-              <p class="text-[10px] text-slate-400 truncate">${d.country} • ${d.iata} (${d.estFlightHours}h flight)</p>
+        <!-- Hero Photographic Banner (Landscape 16:9 crop) -->
+        <div class="relative h-28 w-full overflow-hidden bg-slate-900">
+          <img
+            src="${photoUrl}"
+            alt="${d.city}"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-black/20"></div>
+
+          <!-- Top Rank Badge: #1 Best Match -->
+          ${isTopRanked ? `
+            <div class="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-md">
+              #1 Best match
+            </div>
+          ` : ''}
+
+          <!-- Floating City & Season Badge inside photo -->
+          <div class="absolute bottom-2 left-3 right-3 flex items-end justify-between z-10">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="text-lg leading-none">${d.flag}</span>
+              <h3 class="text-sm font-extrabold text-white truncate drop-shadow-md">${d.city}</h3>
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${seasonBadgeClass}">
+                ${d.isOnPeak ? 'ON-PEAK' : 'OFF-PEAK'}
+              </span>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            ${seasonBadge}
-            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              🌡️ ${formatTemp(d.tempC)}
+        </div>
+
+        <!-- Card Footer: Flight time, weather, and large price -->
+        <div class="p-3 bg-slate-950/90 flex items-center justify-between border-t border-slate-800/80">
+          <div>
+            <div class="flex items-center gap-1.5 text-[11px] text-slate-300 font-medium">
+              <span>⛅ ${formatTemp(d.tempC)}</span>
+              <span class="text-slate-600">•</span>
+              <span>${d.estFlightHours}h flight</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">
+              Flights + ${tier.shortLabel}
+            </div>
+          </div>
+
+          <div class="text-right">
+            <span class="text-[10px] text-slate-400 block -mb-0.5">from</span>
+            <span class="text-base font-extrabold font-mono text-amber-300">
+              ${formatMoney(tier.combinedTotalGBP)}
             </span>
           </div>
-        </div>
-
-        <!-- Middle Row: Expected Flying Cost + Hotel Cost Highlight -->
-        <div class="bg-slate-900/90 border border-slate-800/90 rounded-lg p-2 flex items-center justify-between text-xs">
-          <div class="space-y-0.5">
-            <div class="text-[10px] text-slate-400">Flights (${getTravellersLabel(true)}) + ${state.tripDays}d ${tier.shortLabel}</div>
-            <div class="font-mono text-[11px] text-slate-200">
-              <span class="text-cyan-300 font-semibold">✈️ ${formatMoney(d.flightCostGBP)}</span>
-              <span class="text-slate-500 mx-1">+</span>
-              <span class="text-amber-300 font-semibold">🏨 ${formatMoney(tier.hotelTotalGBP)}</span>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="text-[9px] uppercase font-mono ${d.matchesBudget ? 'text-emerald-400' : 'text-amber-400'}">
-              ${d.matchesBudget ? 'Within Budget' : 'Above Budget'}
-            </div>
-            <div class="text-sm font-mono font-extrabold ${d.matchesBudget ? 'text-emerald-300' : 'text-amber-300'}">
-              ${formatMoney(tier.combinedTotalGBP)}
-            </div>
-          </div>
-        </div>
-
-        <!-- Selected Accommodation Tiers Comparison Grid -->
-        <div class="grid grid-cols-2 gap-1">
-          ${allSelectedTiersPills}
-        </div>
-
-        <!-- Bottom Action Bar -->
-        <div class="flex items-center justify-between pt-0.5 text-[10px] text-cyan-400 font-semibold">
-          <span class="flex items-center gap-1">
-            <span>✨ Click for AI Itinerary &amp; Booking Links</span>
-          </span>
-          <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
       </div>
     `;
