@@ -1728,341 +1728,220 @@ function closeDestinationModal() {
   }
 }
 
+function toggleModalCalculationDetails() {
+  const panel = document.getElementById('modal-calculation-details-panel');
+  const chevron = document.getElementById('calc-details-chevron');
+  if (panel) {
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+      panel.classList.remove('hidden');
+      if (chevron) chevron.style.transform = 'rotate(180deg)';
+    } else {
+      panel.classList.add('hidden');
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+  }
+}
+
+function toggleItinerarySection() {
+  const box = document.getElementById('generated-itinerary-container');
+  const btn = document.getElementById('btn-toggle-itinerary-box');
+  if (box) {
+    const isHidden = box.classList.contains('hidden');
+    if (isHidden) {
+      box.classList.remove('hidden');
+      if (btn) btn.textContent = 'Hide Itinerary';
+      generateDestinationItinerary();
+    } else {
+      box.classList.add('hidden');
+      if (btn) btn.textContent = 'Create Itinerary';
+    }
+  }
+}
+
 function selectModalAccommodationTier(tierId) {
   state.activeModalTier = tierId;
   const dest = computedDestinations.find(d => d.id === state.selectedDestinationId);
   if (!dest) return;
   renderDestinationModalContent(dest);
-  if (state.itineraryVisible) {
-    generateDestinationItinerary();
-  }
 }
 
 function renderDestinationModalContent(dest) {
   const origin = getOriginHub();
   const monthMeta = MONTHS_META[state.monthIndex];
+  const currCode = state.currency || 'GBP';
+  const dates = getSampleTravelDates();
 
-  document.getElementById('modal-flag').textContent = dest.flag;
-  document.getElementById('modal-city-title').textContent = `${dest.city}, ${dest.country}`;
-  document.getElementById('modal-tagline').textContent = dest.tagline;
-  document.getElementById('modal-temp-badge').textContent = `🌡️ ${formatTemp(dest.tempC)} in ${monthMeta.short} (${dest.sunHours}h Sun/day)`;
-
-  const seasonBadge = document.getElementById('modal-season-badge');
-  if (dest.isOnPeak) {
-    seasonBadge.textContent = '🔥 On-Peak Season';
-    seasonBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide bg-amber-500/20 text-amber-300 border border-amber-500/40';
-  } else {
-    seasonBadge.textContent = '💎 Off-Peak Value Season';
-    seasonBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+  // 1. Top Photographic Banner & Title
+  const heroImg = document.getElementById('modal-hero-photo');
+  if (heroImg) {
+    heroImg.src = getDestinationPhoto(dest.id);
+    heroImg.alt = dest.city;
   }
+  const flagEl = document.getElementById('modal-flag');
+  if (flagEl) {
+    flagEl.innerHTML = getFlagIconHtml(dest, "w-6 h-4.5 rounded-[3px] object-cover inline-block shadow-md");
+  }
+  const cityTitle = document.getElementById('modal-city-title');
+  if (cityTitle) cityTitle.textContent = dest.city;
 
-  document.getElementById('modal-vibe-tags').innerHTML = dest.vibeTags.map(tag =>
-    `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">${tag}</span>`
-  ).join('');
+  const tempBadge = document.getElementById('modal-temp-badge');
+  if (tempBadge) tempBadge.textContent = `☀️ ${formatTemp(dest.tempC)} in ${monthMeta.short}`;
 
-  document.getElementById('modal-cost-heading').textContent =
-    `Expected Flying + Hotel Cost (${state.tripDays} Days • ${getTravellersLabel(false)} in ${monthMeta.full})`;
-  document.getElementById('modal-route-meta').textContent =
-    `${origin.city} (${origin.iata}) ✈ ${dest.city} (${dest.iata}) • ~${dest.estFlightHours}h Flight • ${getHotelRoomsCount()} Room(s)`;
+  const seasonText = document.getElementById('modal-season-text');
+  if (seasonText) seasonText.textContent = dest.isOnPeak ? 'On-peak' : 'Off-peak';
 
-  // Render all 4 Accommodation Tiers (highlighting the ones the user checked + allowing click to switch)
-  const cardsContainer = document.getElementById('modal-accommodation-cards');
-  cardsContainer.innerHTML = ACCOMMODATION_TIERS.map(tierMeta => {
-    const t = dest.tierBreakdowns[tierMeta.id];
-    const isUserChecked = state.selectedAccommodations.includes(tierMeta.id);
-    const isActive = state.activeModalTier === tierMeta.id;
-    const budgetDiff = state.budgetGBP - t.combinedTotalGBP;
-    const stayRoomLabel = tierMeta.id === 'airbnb'
-      ? 'Entire Rental'
-      : `${t.roomsNeeded} Room${t.roomsNeeded > 1 ? 's' : ''}`;
+  // 2. Summary Line: "7 nights • 2 adults • December" & "from £745"
+  const summaryLine = document.getElementById('modal-trip-summary-line');
+  if (summaryLine) {
+    summaryLine.textContent = `${state.tripDays} nights • ${getTravellersLabel(false)} • ${monthMeta.full}`;
+  }
+  const minPriceEl = document.getElementById('modal-trip-min-price');
+  const minTotal = Math.min(...Object.values(dest.tierBreakdowns).map(t => t.combinedTotalGBP));
+  if (minPriceEl) minPriceEl.textContent = formatMoney(minTotal);
 
-    return `
-      <div
-        onclick="selectModalAccommodationTier('${tierMeta.id}')"
-        class="p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
-          isActive
-            ? 'bg-slate-800/95 border-cyan-400 ring-2 ring-cyan-500/30 shadow-lg'
-            : isUserChecked
-              ? 'bg-slate-950/90 border-slate-700 hover:border-slate-500'
-              : 'bg-slate-950/40 border-slate-800/60 opacity-65 hover:opacity-100'
-        }"
-      >
-        <div>
-          <div class="flex items-center justify-between gap-1 mb-1.5">
-            <span class="text-xs font-extrabold text-white">${tierMeta.label}</span>
-            ${isActive
-              ? `<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950 font-extrabold">Viewing Basis</span>`
-              : isUserChecked
-                ? `<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Selected</span>`
-                : ''
-            }
-          </div>
-          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 mb-2.5">
-            <div class="text-[9px] uppercase font-mono tracking-wider text-amber-300/90 font-bold mb-0.5">
-              🏨 Identified Reference Stay:
-            </div>
-            <p class="text-[11px] font-semibold text-white leading-snug line-clamp-2" title="${t.exampleProperty}">
-              ${t.exampleProperty}
-            </p>
-            <div class="text-[10px] font-mono text-emerald-300 mt-1">
-              ${formatMoney(t.nightlyGBP)}/night × ${state.tripDays} nights
-            </div>
-          </div>
-        </div>
+  // 3. Segmented Tier Choice Buttons Grid (4 columns)
+  const tierGrid = document.getElementById('modal-tier-buttons-grid');
+  if (tierGrid) {
+    const tierDisplayNames = {
+      '5star': 'Luxury',
+      '4star': 'Boutique',
+      '3star': 'Comfort',
+      'airbnb': 'Rental'
+    };
+    tierGrid.innerHTML = ACCOMMODATION_TIERS.map(tierMeta => {
+      const t = dest.tierBreakdowns[tierMeta.id];
+      const isSelected = state.activeModalTier === tierMeta.id;
+      const displayName = tierDisplayNames[tierMeta.id] || tierMeta.label;
 
-        <div class="space-y-1 pt-2 border-t border-slate-800 text-xs font-mono">
-          <div class="flex justify-between text-[11px] text-slate-300">
-            <span>✈️ Flights (${getTravellersLabel(true)}):</span>
-            <span class="text-cyan-300 font-semibold">${formatMoney(t.flightCostGBP)}</span>
-          </div>
-          <div class="flex justify-between text-[11px] text-slate-300">
-            <span>🏨 ${state.tripDays}n (${stayRoomLabel}):</span>
-            <span class="text-amber-300 font-semibold">${formatMoney(t.hotelTotalGBP)}</span>
-          </div>
-          <div class="flex justify-between items-baseline pt-1.5 border-t border-slate-800/80">
-            <span class="text-[11px] font-sans font-bold text-white">Total (${getTravellersLabel(true)}):</span>
-            <span class="text-base font-extrabold ${t.withinBudget ? 'text-emerald-400' : 'text-amber-400'}">${formatMoney(t.combinedTotalGBP)}</span>
-          </div>
-          <div class="flex items-center justify-between text-[10px] font-sans">
-            <span class="text-slate-400">~${formatMoney(t.perPersonGBP)}/person</span>
-            <span class="font-semibold ${t.withinBudget ? 'text-emerald-400' : 'text-amber-400'}">
-              ${t.withinBudget ? `✅ -${formatMoney(budgetDiff)}` : `⚠️ +${formatMoney(Math.abs(budgetDiff))}`}
-            </span>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // Render Identified Reference Hotel & Flight Price Basis Panel for Active Tier
-  const basisPanel = document.getElementById('modal-price-basis-panel');
-  if (basisPanel) {
-    const activeTier = dest.tierBreakdowns[state.activeModalTier] || dest.primaryTier;
-    const dates = getSampleTravelDates();
-    const currCode = state.currency || 'GBP';
-
-    // Clean primary hotel name (e.g., "La Mamounia / Royal Mansour Marrakech" -> "La Mamounia")
-    const rawExample = activeTier.exampleProperty || dest.city;
-    const primaryHotelName = rawExample.split('/')[0].trim();
-
-    // 1. Booking.com direct hotel search URL with dates, guests and room count
-    // Uses Booking.com search with specific property name in query parameter which lands directly on property card
-    const bookingHotelUrl = activeTier.tierId === 'airbnb'
-      ? `https://www.airbnb.co.uk/s/${encodeURIComponent(dest.city)}--${encodeURIComponent(dest.country)}/homes?query=${encodeURIComponent(primaryHotelName)}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`
-      : `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(`${primaryHotelName}, ${dest.city}`)}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${activeTier.roomsNeeded}&selected_currency=${currCode}`;
-
-    // 2. Google Travel Hotels direct search
-    const googleHotelsUrl = `https://www.google.com/travel/hotels/${encodeURIComponent(dest.city)}?q=${encodeURIComponent(`${primaryHotelName} ${dest.city}`)}`;
-
-    // 3. Tripadvisor direct search
-    const tripadvisorUrl = `https://www.tripadvisor.com/Search?q=${encodeURIComponent(`${primaryHotelName} ${dest.city}`)}&ssrc=h`;
-
-    // 4. Skyscanner direct flight search
-    const skyscannerFlightUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}&currency=${currCode}`;
-    const googleFlightsUrl = `https://www.google.com/travel/flights?curr=${currCode}&q=${encodeURIComponent(`Flights from ${origin.iata} to ${dest.iata} on ${dates.checkinISO} through ${dates.checkoutISO} for ${state.adults} adults${state.children > 0 ? ' and ' + state.children + ' children' : ''}`)}`;
-
-    const hotelSeasonText = dest.isOnPeak
-      ? `On-Peak Month (+15% peak demand adjustment in ${monthMeta.full})`
-      : `Off-Peak Value Month (-15% off-peak discount in ${monthMeta.full})`;
-    const flightSeasonText = dest.isOnPeak
-      ? `On-Peak Month (+14% seasonal airfare adjustment in ${monthMeta.full})`
-      : `Off-Peak Value Month (-12% off-peak airfare saver in ${monthMeta.full})`;
-    const roomBasisText = activeTier.tierId === 'airbnb'
-      ? `Entire Home / Apartment for ${getTravellersLabel(false)}`
-      : `${activeTier.roomsNeeded} Room${activeTier.roomsNeeded > 1 ? 's' : ''} for ${getTravellersLabel(false)}`;
-
-    basisPanel.innerHTML = `
-      <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800">
-        <div class="flex items-center gap-2">
-          <span class="px-2 py-0.5 rounded-md text-[10px] font-mono uppercase font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-            Price Transparency Basis
+      return `
+        <button
+          type="button"
+          onclick="selectModalAccommodationTier('${tierMeta.id}')"
+          class="py-2 px-2 rounded-xl border text-center transition flex flex-col items-center justify-center gap-0.5 ${
+            isSelected
+              ? 'bg-cyan-950/80 border-cyan-400 ring-2 ring-cyan-500/50 shadow-md text-white'
+              : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-900'
+          }"
+        >
+          <span class="text-[11px] font-bold">${displayName}</span>
+          <span class="text-xs font-mono font-extrabold ${isSelected ? 'text-white' : 'text-slate-300'}">
+            ${formatMoney(t.combinedTotalGBP)}
           </span>
-          <h4 class="text-xs sm:text-sm font-extrabold text-white">
-            How Your ${formatMoney(activeTier.combinedTotalGBP)} Total (${activeTier.label}) Was Identified
-          </h4>
+        </button>
+      `;
+    }).join('');
+  }
+
+  // 4. Active Hotel Card Panel (matching screenshot design)
+  const activeTier = dest.tierBreakdowns[state.activeModalTier] || dest.primaryTier;
+  const rawExample = activeTier.exampleProperty || dest.city;
+  const primaryHotelName = rawExample.split('/')[0].trim();
+  const hotelCard = document.getElementById('modal-selected-hotel-card');
+
+  // Booking URLs for direct click
+  const bookingHotelUrl = activeTier.tierId === 'airbnb'
+    ? `https://www.airbnb.co.uk/s/${encodeURIComponent(dest.city)}--${encodeURIComponent(dest.country)}/homes?query=${encodeURIComponent(primaryHotelName)}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&adults=${state.adults}&children=${state.children}&currency=${currCode}`
+    : `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(`${primaryHotelName}, ${dest.city}`)}&checkin=${dates.checkinISO}&checkout=${dates.checkoutISO}&group_adults=${state.adults}&group_children=${state.children}&no_rooms=${activeTier.roomsNeeded}&selected_currency=${currCode}`;
+
+  const skyscannerFlightUrl = `https://www.skyscanner.net/transport/flights/${origin.skyscannerCode}/${dest.iata.toLowerCase()}/${dates.checkinSky}/${dates.checkoutSky}/?adults=${state.adults}&children=${state.children}&currency=${currCode}`;
+
+  if (hotelCard) {
+    hotelCard.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 class="text-base sm:text-lg font-extrabold text-white leading-tight">${primaryHotelName}</h3>
+          <p class="text-xs text-slate-400 mt-0.5 truncate">${activeTier.label} in ${dest.city}</p>
         </div>
-        <span class="text-[11px] font-mono text-emerald-300 font-bold">
-          All amounts in ${currCode} • ${state.tripDays} Nights (${dates.checkinDMY} → ${dates.checkoutDMY})
-        </span>
+        <img
+          src="${getDestinationPhoto(dest.id)}"
+          alt="${primaryHotelName}"
+          class="w-20 h-14 sm:w-24 sm:h-16 rounded-xl object-cover shrink-0 border border-slate-700/80 shadow"
+        />
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        <!-- 1. Hotel Basis Card -->
-        <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3.5 flex flex-col justify-between space-y-2.5">
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
-                <i data-lucide="hotel" class="w-4 h-4"></i>
-                <span>1. Identified Accommodation Basis (${activeTier.shortLabel})</span>
-              </span>
-              <span class="font-mono text-xs font-extrabold text-amber-300">${formatMoney(activeTier.hotelTotalGBP)}</span>
-            </div>
-
-            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 space-y-1">
-              <div class="flex items-center justify-between text-[10px] text-slate-400 uppercase font-mono">
-                <span>Benchmark Reference Hotel:</span>
-                <span class="text-amber-400 font-bold">Source: Booking.com &amp; Google Hotels</span>
-              </div>
-              <div class="text-xs font-extrabold text-white">${activeTier.exampleProperty}</div>
-              <div class="text-[10px] text-slate-400">
-                Verified median price derived from historical ${monthMeta.full} bookings on <span class="text-amber-300 font-semibold">Booking.com</span> &amp; <span class="text-amber-300 font-semibold">Hotels.com</span>.
-              </div>
-            </div>
-
-            <div class="space-y-1 text-[11px] font-mono text-slate-300 pt-1">
-              <div class="flex justify-between">
-                <span class="text-slate-400">• Standard Base Rate (1 Room/Night):</span>
-                <span class="text-white font-semibold">${formatMoney(activeTier.baseNightlyGBP)}/night</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">• Seasonality (${monthMeta.short}):</span>
-                <span class="${dest.isOnPeak ? 'text-amber-300' : 'text-emerald-300'}">${hotelSeasonText}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">• Party &amp; Room Allocation:</span>
-                <span class="text-white">${roomBasisText}</span>
-              </div>
-              <div class="flex justify-between pt-1 border-t border-slate-800 text-amber-300 font-bold">
-                <span>• Identified Nightly Stay Cost × ${state.tripDays} Nights:</span>
-                <span>${formatMoney(activeTier.nightlyGBP)} × ${state.tripDays}n = ${formatMoney(activeTier.hotelTotalGBP)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 pt-1">
-            <a
-              href="${bookingHotelUrl}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex-1 py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
-              title="Search live rates for ${primaryHotelName} on Booking.com"
-            >
-              <i data-lucide="building" class="w-3 h-3 text-amber-400"></i>
-              <span>View "${primaryHotelName}" on Booking.com</span>
-              <i data-lucide="external-link" class="w-3 h-3"></i>
-            </a>
-            <a
-              href="${googleHotelsUrl}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
-              title="Compare live rates on Google Hotels"
-            >
-              <span>Google Hotels</span>
-              <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-400"></i>
-            </a>
-            <a
-              href="${tripadvisorUrl}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="py-1.5 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
-              title="View reviews and photos on Tripadvisor"
-            >
-              <span>Tripadvisor</span>
-              <i data-lucide="arrow-up-right" class="w-3 h-3 text-emerald-400"></i>
-            </a>
-          </div>
+      <!-- Cost breakdown list -->
+      <div class="space-y-1.5 pt-1 border-t border-slate-800 text-xs font-mono">
+        <div class="flex justify-between items-center text-slate-300">
+          <span>${formatMoney(activeTier.nightlyGBP)}/night × ${state.tripDays}</span>
+          <span class="font-bold text-white">${formatMoney(activeTier.hotelTotalGBP)}</span>
         </div>
-
-        <!-- 2. Flight Basis Card -->
-        <div class="bg-slate-900/90 border border-cyan-500/30 rounded-xl p-3.5 flex flex-col justify-between space-y-2.5">
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-cyan-300 flex items-center gap-1.5">
-                <i data-lucide="plane" class="w-4 h-4"></i>
-                <span>2. Identified Return Flight Basis (${origin.iata} ✈ ${dest.iata})</span>
-              </span>
-              <span class="font-mono text-xs font-extrabold text-cyan-300">${formatMoney(dest.flightCostGBP)}</span>
-            </div>
-
-            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 space-y-1">
-              <div class="flex items-center justify-between text-[10px] text-slate-400 uppercase font-mono">
-                <span>Corridor &amp; Distance Basis:</span>
-                <span class="text-cyan-400 font-bold">Source: Skyscanner &amp; Google Flights</span>
-              </div>
-              <div class="text-xs font-extrabold text-white">
-                ${origin.flag} ${origin.city} (${origin.iata}) ⇄ ${dest.flag} ${dest.city} (${dest.iata}) • ${dest.distanceKm.toLocaleString()} km (~${dest.estFlightHours}h)
-              </div>
-              <div class="text-[10px] text-slate-400">
-                Airfares calibrated from aggregate economy return route data on <span class="text-cyan-300 font-semibold">Skyscanner</span> &amp; <span class="text-cyan-300 font-semibold">Google Flights</span>.
-              </div>
-            </div>
-
-            <div class="space-y-1 text-[11px] font-mono text-slate-300 pt-1">
-              <div class="flex justify-between">
-                <span class="text-slate-400">• Route Baseline Return Fare (1 Adult):</span>
-                <span class="text-white font-semibold">${formatMoney(dest.rawFlightGBP)}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">• Seasonality (${monthMeta.short}):</span>
-                <span class="${dest.isOnPeak ? 'text-amber-300' : 'text-emerald-300'}">${flightSeasonText}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">• Adult Return Fare (${state.adults} Adult${state.adults > 1 ? 's' : ''}):</span>
-                <span class="text-white">${state.adults} × ${formatMoney(dest.singleAdultFlightGBP)} = ${formatMoney(state.adults * dest.singleAdultFlightGBP)}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">• Child Return Fare (25% off, ${state.children} Child${state.children !== 1 ? 'ren' : ''}):</span>
-                <span class="text-pink-300">${state.children > 0 ? `${state.children} × ${formatMoney(dest.singleChildFlightGBP)} = ${formatMoney(state.children * dest.singleChildFlightGBP)}` : `${formatMoney(dest.singleChildFlightGBP)}/child (0 selected)`}</span>
-              </div>
-              <div class="flex justify-between pt-1 border-t border-slate-800 text-cyan-300 font-bold">
-                <span>• Total Return Flights (${getTravellersLabel(true)}):</span>
-                <span>${formatMoney(dest.flightCostGBP)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 pt-1">
-            <a
-              href="${skyscannerFlightUrl}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex-1 py-1.5 px-2.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
-            >
-              <i data-lucide="plane" class="w-3 h-3 text-cyan-400"></i>
-              <span>Verify ${origin.iata} ⇄ ${dest.iata} on Skyscanner</span>
-              <i data-lucide="external-link" class="w-3 h-3"></i>
-            </a>
-            <a
-              href="https://www.google.com/travel/flights?curr=${currCode}&q=${encodeURIComponent(`Flights from ${origin.iata} to ${dest.iata} on ${dates.checkinISO} through ${dates.checkoutISO}`)}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition"
-              title="Compare live airfares on Google Flights"
-            >
-              <span>Google Flights</span>
-              <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-400"></i>
-            </a>
-          </div>
+        <div class="flex justify-between items-center text-slate-300">
+          <span>Flights ${origin.city} → ${dest.city} (${getTravellersLabel(false)})</span>
+          <span class="font-bold text-white">${formatMoney(dest.flightCostGBP)}</span>
         </div>
       </div>
 
-      <!-- Real-Time Data Sources Verification Banner -->
-      <div class="mt-3 p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-        <div class="flex items-center gap-1.5">
-          <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
-          <span><strong>Data Sources:</strong> Flight fares monitored via <em>Skyscanner &amp; Google Flights</em>. Accommodations verified from <em>Booking.com, Hotels.com, Tripadvisor &amp; Airbnb</em>.</span>
+      <!-- Total Row -->
+      <div class="flex items-baseline justify-between pt-2 border-t border-slate-800">
+        <div>
+          <span class="text-sm font-extrabold text-white">Total</span>
         </div>
-        <span class="text-emerald-400 font-semibold flex items-center gap-1">
-          <i data-lucide="check-circle" class="w-3 h-3"></i>
-          <span>Click links to see live partner availability</span>
-        </span>
+        <div class="text-right">
+          <span class="text-lg sm:text-xl font-extrabold font-mono text-white">${formatMoney(activeTier.combinedTotalGBP)}</span>
+          <span class="text-xs text-slate-400 ml-1">· ${formatMoney(activeTier.perPersonGBP)} per person</span>
+        </div>
+      </div>
+
+      <!-- CTA Buttons: Book hotel & See flights -->
+      <div class="grid grid-cols-2 gap-2.5 pt-1">
+        <a
+          href="${bookingHotelUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="py-2.5 px-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 transition active:scale-[0.98]"
+        >
+          <span>Book hotel</span>
+          <i data-lucide="external-link" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+        </a>
+        <a
+          href="${skyscannerFlightUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-[0.98]"
+        >
+          <span>See flights</span>
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-400"></i>
+        </a>
       </div>
     `;
   }
 
-  // Update Itinerary Prompt Question
-  document.getElementById('itinerary-prompt-question').textContent =
-    `Would you like the tool to create a custom ${state.tripDays}-Day Itinerary for ${dest.city} (${getTravellersLabel(false)})?`;
-  document.getElementById('itinerary-prompt-month').textContent =
-    `${monthMeta.full} (${formatTemp(dest.tempC)}, ${dest.isOnPeak ? 'On-Peak' : 'Off-Peak'})`;
-
-  if (!state.itineraryVisible) {
-    document.getElementById('generated-itinerary-container').classList.add('hidden');
+  // 5. Collapsible Calculation Details Panel
+  const detailsPanel = document.getElementById('modal-calculation-details-panel');
+  if (detailsPanel) {
+    detailsPanel.innerHTML = `
+      <div class="space-y-2 text-slate-300 text-xs">
+        <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+          <span class="font-bold text-white uppercase text-[10px] tracking-wider">Calculation Transparency</span>
+          <span class="text-[10px] text-cyan-400 font-mono">${dates.checkinDMY} → ${dates.checkoutDMY}</span>
+        </div>
+        <div class="space-y-1">
+          <div class="flex justify-between">
+            <span class="text-slate-400">• Accommodation source:</span>
+            <span class="text-amber-300 font-semibold">Booking.com &amp; Google Hotels (${activeTier.exampleProperty})</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">• Airfare source:</span>
+            <span class="text-cyan-300 font-semibold">Skyscanner (${origin.iata} ⇄ ${dest.iata})</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">• Seasonality adjustment:</span>
+            <span class="${dest.isOnPeak ? 'text-amber-300' : 'text-emerald-300'} font-semibold">${dest.isOnPeak ? 'On-Peak (+15%)' : 'Off-Peak Value (-15%)'}</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+          Click <strong>Book hotel</strong> or <strong>See flights</strong> above to view real-time availability and live pricing directly on Booking.com and Skyscanner.
+        </p>
+      </div>
+    `;
   }
 
-  // Render Direct Flight & Hotel Booking Links
-  renderDirectBookingLinks(dest);
+  // 6. Day-by-Day Itinerary prompt
+  const itinContainer = document.getElementById('generated-itinerary-container');
+  if (itinContainer && state.itineraryVisible) {
+    generateDestinationItinerary();
+  }
 
   if (window.lucide) lucide.createIcons();
 }
