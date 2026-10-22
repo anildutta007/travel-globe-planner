@@ -463,20 +463,22 @@ function executeHolidaySearch() {
   // Ensure filters are computed
   handleFilterChange();
 
+  // On mobile, explicitly switch view to Globe immediately
+  const isMobileScreen = window.innerWidth < 1024;
+  const isDesktopForced = document.body.classList.contains('desktop-forced');
+  if (isMobileScreen && !isDesktopForced) {
+    setMobileTab('globe');
+  }
+
   const matches = (computedDestinations || []).filter(d => d.isLitUp);
   if (matches.length > 0) {
     const top = matches[0];
     if (state.mapMode === '3d' && globeInstance) {
-      globeInstance.pointOfView({ lat: top.lat, lng: top.lng, altitude: window.innerWidth < 1024 ? 2.5 : 1.5 }, 1000);
+      globeInstance.pointOfView({ lat: top.lat, lng: top.lng, altitude: isMobileScreen ? 2.5 : 1.5 }, 1000);
     }
-    showNotification(`Found ${matches.length} matching destinations! Showing globe recommendations.`, 'success');
+    showNotification(`Found ${matches.length} matching destinations! Showing globe view.`, 'success');
   } else {
     showNotification('No destinations matched all criteria. Try adjusting your budget or vibe!', 'warning');
-  }
-
-  // On mobile, show the interactive Globe with lit-up destinations as requested
-  if (window.innerWidth < 1024 && !document.body.classList.contains('desktop-forced')) {
-    setMobileTab('globe');
   }
 }
 
@@ -520,17 +522,35 @@ function setMobileTab(tabName) {
 
   if (isMobileScreen && !isDesktopForced) {
     if (tabName === 'filters') {
-      if (leftPanel) leftPanel.style.display = 'flex';
-      if (rightPanel) rightPanel.style.display = 'none';
+      if (leftPanel) {
+        leftPanel.style.display = 'flex';
+        leftPanel.classList.remove('mobile-hidden');
+      }
+      if (rightPanel) {
+        rightPanel.style.display = 'none';
+        rightPanel.classList.add('mobile-hidden');
+      }
       if (btnFilters) btnFilters.className = 'flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-orange-400 font-bold';
     } else if (tabName === 'picks') {
-      if (leftPanel) leftPanel.style.display = 'none';
-      if (rightPanel) rightPanel.style.display = 'flex';
+      if (leftPanel) {
+        leftPanel.style.display = 'none';
+        leftPanel.classList.add('mobile-hidden');
+      }
+      if (rightPanel) {
+        rightPanel.style.display = 'flex';
+        rightPanel.classList.remove('mobile-hidden');
+      }
       if (btnPicks) btnPicks.className = 'flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-pink-400 font-bold';
     } else {
       // 'globe'
-      if (leftPanel) leftPanel.style.display = 'none';
-      if (rightPanel) rightPanel.style.display = 'none';
+      if (leftPanel) {
+        leftPanel.style.display = 'none';
+        leftPanel.classList.add('mobile-hidden');
+      }
+      if (rightPanel) {
+        rightPanel.style.display = 'none';
+        rightPanel.classList.add('mobile-hidden');
+      }
       if (btnGlobe) btnGlobe.className = 'flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition text-cyan-400 font-bold';
     }
 
@@ -538,8 +558,14 @@ function setMobileTab(tabName) {
     setTimeout(handleViewportResize, 50);
   } else {
     // Desktop layout
-    if (leftPanel) leftPanel.style.display = 'flex';
-    if (rightPanel) rightPanel.style.display = 'flex';
+    if (leftPanel) {
+      leftPanel.style.display = 'flex';
+      leftPanel.classList.remove('mobile-hidden');
+    }
+    if (rightPanel) {
+      rightPanel.style.display = 'flex';
+      rightPanel.classList.remove('mobile-hidden');
+    }
   }
 }
 

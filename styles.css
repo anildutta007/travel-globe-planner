@@ -425,6 +425,12 @@ select optgroup {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* When hidden via setMobileTab or inline style, enforce hiding */
+  body:not(.desktop-forced) #left-filter-panel.mobile-hidden,
+  body:not(.desktop-forced) #right-matches-column.mobile-hidden {
+    display: none !important;
+  }
+
   /* When desktop mode is forced on mobile via toggle, allow horizontal scrolling of the 3 columns */
   body.desktop-forced .main-workspace-container {
     overflow-x: auto !important;
