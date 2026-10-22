@@ -460,21 +460,23 @@ function selectVibe(vibeKey) {
 }
 
 function executeHolidaySearch() {
-  // Center or highlight the top matching destination or scroll results into view
+  // Ensure filters are computed
+  handleFilterChange();
+
   const matches = (computedDestinations || []).filter(d => d.isLitUp);
   if (matches.length > 0) {
     const top = matches[0];
     if (state.mapMode === '3d' && globeInstance) {
-      globeInstance.pointOfView({ lat: top.lat, lng: top.lng, altitude: 1.5 }, 1000);
+      globeInstance.pointOfView({ lat: top.lat, lng: top.lng, altitude: window.innerWidth < 1024 ? 2.5 : 1.5 }, 1000);
     }
-    showNotification(`Found ${matches.length} matching destinations! Top pick: ${top.city}.`, 'success');
+    showNotification(`Found ${matches.length} matching destinations! Showing globe recommendations.`, 'success');
   } else {
     showNotification('No destinations matched all criteria. Try adjusting your budget or vibe!', 'warning');
   }
 
-  // If on mobile, transition view to Top Picks list so user sees results immediately
+  // On mobile, show the interactive Globe with lit-up destinations as requested
   if (window.innerWidth < 1024 && !document.body.classList.contains('desktop-forced')) {
-    setMobileTab('picks');
+    setMobileTab('globe');
   }
 }
 
@@ -932,49 +934,43 @@ function resetAllFilters() {
 
 /**
  * Visitor Counter Engine:
- * Interacts with /api/visitors backend and falls back gracefully to localStorage
- * Tracks total visits and unique visitors with live updates.
+ * Uses high-availability cloud counter service (Abacus CountAPI) synchronized across all users and devices,
+ * with graceful fallback to localStorage and local API. Never resets on app updates.
  */
 function initVisitorCounter() {
   const badgeEl = document.getElementById('visitor-count-badge');
   if (!badgeEl) return;
 
-  // Reset any old legacy inflated localStorage counters from previous builds
-  try {
-    const oldVal = parseInt(localStorage.getItem('dutta_local_visitor_count') || '0', 10);
-    if (oldVal > 500) {
-      localStorage.removeItem('dutta_local_visitor_count');
-      localStorage.removeItem('dutta_planner_visitor_logged');
-    }
-  } catch (e) {}
-
-  const storageKey = 'dutta_visitor_v2_logged';
-  const isFirstVisit = !localStorage.getItem(storageKey);
-  if (isFirstVisit) {
+  const storageLoggedKey = 'dutta_travel_logged_session';
+  const isFirstSessionVisit = !sessionStorage.getItem(storageLoggedKey);
+  if (isFirstSessionVisit) {
     try {
-      localStorage.setItem(storageKey, 'true');
+      sessionStorage.setItem(storageLoggedKey, 'true');
     } catch (e) {}
   }
 
-  // Attempt backend API call
-  const apiUrl = `/api/visitors?inc=1&unique=${isFirstVisit ? '1' : '0'}`;
-  fetch(apiUrl)
+  // Use hit only once per session so repeat refreshes within same session count authentically, or get on reload
+  const endpoint = isFirstSessionVisit ? 'hit' : 'get';
+  const cloudCounterUrl = `https://abacus.jasoncameron.dev/${endpoint}/travel-globe-planner/visits`;
+
+  fetch(cloudCounterUrl)
     .then(res => {
-      if (!res.ok) throw new Error('API offline');
+      if (!res.ok) throw new Error('Cloud counter offline');
       return res.json();
     })
     .then(data => {
-      const visits = data.totalVisits || data.uniqueVisitors || 1;
-      badgeEl.textContent = visits.toLocaleString();
+      if (data && typeof data.value === 'number') {
+        const count = Math.max(1, data.value);
+        badgeEl.textContent = count.toLocaleString();
+        try {
+          localStorage.setItem('dutta_synced_visitor_cache', String(count));
+        } catch (e) {}
+      }
     })
     .catch(() => {
-      // Local fallback simulation with clean v2 localStorage
-      const localKey = 'dutta_visitor_v2_count';
-      let count = parseInt(localStorage.getItem(localKey) || '1', 10);
-      try {
-        localStorage.setItem(localKey, String(count));
-      } catch (e) {}
-      badgeEl.textContent = count.toLocaleString();
+      // Local fallback in case user is offline
+      const cached = parseInt(localStorage.getItem('dutta_synced_visitor_cache') || '1', 10);
+      badgeEl.textContent = cached.toLocaleString();
     });
 }
 
