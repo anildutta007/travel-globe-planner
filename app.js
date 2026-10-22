@@ -985,6 +985,8 @@ function updateFilterLabels() {
   if (minBadge) minBadge.textContent = formatTemp(state.minTempC);
   const maxBadge = document.getElementById('max-temp-badge');
   if (maxBadge) maxBadge.textContent = formatTemp(state.maxTempC);
+  const tempRangeLabel = document.getElementById('temp-range-label');
+  if (tempRangeLabel) tempRangeLabel.textContent = `${formatTemp(state.minTempC)} – ${formatTemp(state.maxTempC)}`;
   const monthLbl = document.getElementById('selected-month-label');
   if (monthLbl) monthLbl.textContent = monthMeta.full;
   const tripDaysBadge = document.getElementById('trip-days-badge');

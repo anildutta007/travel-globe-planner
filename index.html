@@ -107,20 +107,8 @@
       </div>
     </div>
 
-    <!-- Right Controls: Visitor Counter, Origin Hub, Currency, View Mode & Surprise Me -->
+    <!-- Right Controls: Departure, Currency, Mode Switcher, Visitors & Developer -->
     <div class="flex items-center gap-2">
-      <!-- Live Visitor Counter -->
-      <div class="flex items-center bg-slate-950/80 border border-emerald-500/30 hover:border-emerald-500/60 rounded-lg px-2.5 py-1.5 text-xs shadow-sm transition" title="Total Visitors & Views on Dutta Travel Planner">
-        <div class="flex items-center gap-1.5">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <i data-lucide="eye" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span class="text-slate-400 text-[11px] hidden md:inline">Visitors:</span>
-          <span id="visitor-count-badge" class="font-mono font-bold text-emerald-300 text-xs">1</span>
-        </div>
-      </div>
       <!-- Origin Airport Hub -->
       <div class="flex items-center bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs">
         <i data-lucide="plane-takeoff" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 flex-shrink-0"></i>
@@ -158,11 +146,29 @@
         </button>
       </div>
 
-      <!-- Surprise Me Button -->
-      <button onclick="pickRandomMatchingDestination()" title="Fly to a Random Matching Destination" class="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition">
-        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-        <span class="hidden sm:inline">Surprise Me</span>
-      </button>
+      <!-- Live Visitor Counter (Placed at Extreme Right) -->
+      <div class="flex items-center bg-slate-950/80 border border-emerald-500/30 hover:border-emerald-500/60 rounded-lg px-2.5 py-1.5 text-xs shadow-sm transition" title="Total Visitors & Views on Dutta Travel Planner">
+        <div class="flex items-center gap-1.5">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <i data-lucide="eye" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="text-slate-400 text-[11px] hidden md:inline">Visitors:</span>
+          <span id="visitor-count-badge" class="font-mono font-bold text-emerald-300 text-xs">1</span>
+        </div>
+      </div>
+
+      <!-- Developer Info Pill (Extreme Right) -->
+      <a
+        href="mailto:Anildutta007@gmail.com"
+        title="Contact Developer: Anil Dutta (Anildutta007@gmail.com)"
+        class="hidden sm:flex items-center gap-1.5 bg-slate-950/90 hover:bg-slate-800 border border-cyan-500/30 hover:border-cyan-400/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 hover:text-white shadow-sm transition"
+      >
+        <i data-lucide="user" class="w-3.5 h-3.5 text-cyan-400"></i>
+        <span class="font-semibold text-white">Anil Dutta</span>
+      </a>
+    </div>
     </div>
   </header>
 
@@ -215,19 +221,12 @@
 
       <div class="p-4 space-y-5 flex-1">
 
-        <!-- 1. VIBE / WEATHER SELECTOR (2x2 Visual Cards) -->
+        <!-- 1. VIBE & TEMPERATURE PREFERENCE -->
         <section class="space-y-2.5">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <span>Choose your vibe</span>
             </label>
-            <!-- Hidden inputs so existing range logic stays intact -->
-            <div class="hidden">
-              <input type="range" id="min-temp-slider" min="-15" max="38" value="28" />
-              <input type="range" id="max-temp-slider" min="-10" max="42" value="42" />
-              <span id="min-temp-badge">28°C</span>
-              <span id="max-temp-badge">42°C</span>
-            </div>
             <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-md p-0.5 text-[10px] font-mono">
               <button id="unit-c-btn" onclick="setTempUnit('C')" class="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-bold">°C</button>
               <button id="unit-f-btn" onclick="setTempUnit('F')" class="px-1.5 py-0.5 rounded text-slate-400 hover:text-white">°F</button>
@@ -331,6 +330,52 @@
                 <span class="text-[10px] font-bold text-cyan-300 font-mono">&lt;5°</span>
               </div>
             </button>
+          </div>
+
+          <!-- Custom Min & Max Temperature Selectors -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 space-y-2 mt-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Custom Temperature Range</span>
+              <span id="temp-range-label" class="text-xs font-mono font-extrabold text-amber-300">28°C – 42°C</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2.5">
+              <!-- Min Temp Control -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] text-slate-400">
+                  <span>Min Temp</span>
+                  <span id="min-temp-badge" class="font-bold text-white font-mono">28°C</span>
+                </div>
+                <input
+                  type="range"
+                  id="min-temp-slider"
+                  min="-15"
+                  max="35"
+                  step="1"
+                  value="28"
+                  oninput="syncTempSliders('min')"
+                  class="sunset-slider w-full"
+                />
+              </div>
+
+              <!-- Max Temp Control -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] text-slate-400">
+                  <span>Max Temp</span>
+                  <span id="max-temp-badge" class="font-bold text-white font-mono">42°C</span>
+                </div>
+                <input
+                  type="range"
+                  id="max-temp-slider"
+                  min="0"
+                  max="45"
+                  step="1"
+                  value="42"
+                  oninput="syncTempSliders('max')"
+                  class="sunset-slider w-full"
+                />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -618,20 +663,8 @@
       </div>
 
       <!-- Scrollable Destination Cards Container -->
-      <div id="matching-destinations-list" class="flex-1 overflow-y-auto p-3 space-y-3 pb-20 lg:pb-3">
+      <div id="matching-destinations-list" class="flex-1 overflow-y-auto p-3 space-y-3 pb-24 lg:pb-3">
         <!-- Dynamically rendered by app.js with photographic cards -->
-      </div>
-
-      <!-- Sticky Bottom Action Button: Compare picks -->
-      <div class="p-3 border-t border-slate-800/80 bg-slate-900/90 backdrop-blur-md">
-        <button
-          type="button"
-          onclick="openComparisonModal()"
-          class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-rose-500 hover:from-orange-600 hover:via-pink-600 hover:to-rose-600 text-white font-extrabold text-xs shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 transition transform active:scale-[0.98]"
-        >
-          <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-          <span id="compare-button-text">Compare top picks</span>
-        </button>
       </div>
     </aside>
 
@@ -757,30 +790,6 @@
 
           <div id="modal-calculation-details-panel" class="hidden mt-3 p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-3 text-xs">
             <!-- Populated by app.js with price transparency basis and data sources -->
-          </div>
-        </div>
-
-        <!-- AI Day-by-Day Itinerary Generator Section -->
-        <div class="pt-2 border-t border-slate-800/80">
-          <div class="bg-gradient-to-br from-indigo-950/60 via-slate-950 to-slate-900 border border-indigo-500/30 rounded-2xl p-3.5 sm:p-4 space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                <span>Custom AI Day-by-Day Itinerary</span>
-              </div>
-              <button
-                type="button"
-                id="btn-toggle-itinerary-box"
-                onclick="toggleItinerarySection()"
-                class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 underline"
-              >
-                Create Itinerary
-              </button>
-            </div>
-            
-            <div id="generated-itinerary-container" class="hidden pt-3 border-t border-slate-800/80 space-y-3">
-              <!-- Populated by app.js -->
-            </div>
           </div>
         </div>
 
